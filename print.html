@@ -171,9 +171,11 @@
 <blockquote>
 <p><strong>WARNING</strong>: This tutorial assumes familiarity with Rust.</p>
 </blockquote>
-<p>Before we begin, it's we should know a few things about GTK itself. The architecture that GTK is built upon strongly influences the way that we will interact with it in Rust.</p>
-<p>GTK is a GUI toolkit built around GNOME's GLib Object System — GObject for short. GObject brings object-oriented programming to C. Which means that GTK is written in a strongly object-oriented way.</p>
-<p>Every GTK widget is a GObject, starting with the GObject class itself, and often inheriting several classes. Luckily for us, the behaviors of every class implemented in GTK can be conveniently represented as a trait in Rust.</p>
+<p>Before we begin, it is important to know a few things about GTK itself. The architecture that GTK is built upon strongly influences the way that we will interact with it. Yet I won't dive too deeply into the details, because we only need cover what's most important for us as a consumer of the API in Rust.</p>
+<h2 id="gtk-heavily-uses-glib"><a class="header" href="#gtk-heavily-uses-glib">GTK heavily uses GLib</a></h2>
+<p>GTK is a GUI toolkit built strongly around GLib and it's GLib Object System — which we'll simply call GObject. GLib is essentially a high level cross-platform standard library for C. The GObject portion of GLib enables programming with an object-oriented paradigm.</p>
+<p>GTK uses GLib both for it's object system and asynchronous runtime. Every widget is a GObject class, and most widget classes inherit multiple layers of GTK widget classes. Widgets schedule tasks for concurrent execution on the default async executor (<code>gtk::MainContext::default()</code>), and register signals that react to various property and state changes.</p>
+<p>Luckily for us, the behaviors of every class implemented in GTK can be conveniently represented as a trait in Rust. Even better, GTK fully supports a feature known as &quot;GObject Introspection&quot;, which is a convenient way of automatically generating quality bindings in other programming languages. This allowed GTK to have first class bindings in a short amount of time.</p>
 <h2 id="widgets-are-objects"><a class="header" href="#widgets-are-objects">Widgets are objects</a></h2>
 <p>As for what that means to us, <code>GObjects</code> are heap-allocated with interior mutability. Behaviorally, they operate very similarly to how you would expect to work with a <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> type in Rust.</p>
 <p>You'll never be required to have unique ownership or a mutable reference to modify a widget. When you clone a GObject, you are creating a new strong reference to the object. When all strong references have been dropped, the destructor for that object is run.</p>
