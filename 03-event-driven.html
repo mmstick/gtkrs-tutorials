@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="01-gtk-basics.html"><strong aria-hidden="true">1.</strong> Overview of GTK Basics</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html" class="active"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html" class="active"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -165,11 +165,9 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="handling-application-events"><a class="header" href="#handling-application-events">Handling Application Events</a></h1>
-<p>In every GTK application you write, you should start by setting up an event handler. By using an event-driven approach, you can eliminate the need for reference counters, and potentially getting trapped in complex cyclic reference disasters.</p>
-<p>We can achieve this using a channel, creating a future that handles events received from the channel, and attaching that future to GLib's default executor.</p>
-<p>GLib already has facilities for asynchronous programming built in, and GTK leverages this extensively in its design. We can also have our code spawned on GLib's default executor as well, to run alongside the asynchronous code in GTK.</p>
-<p>Whenever we program the signals in our widgets, we will attach the <code>Sender</code> to the <code>connect_method()</code>, pass an <code>Event</code> enum through that <code>Sender</code>, and then the <code>Receiver</code> in the event-handler will <code>match</code> that <code>Event</code> and do what we want to the application.</p>
+                        <h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
+<p>In every GTK application that I write, I start by setting up an event handler and attaching it to GLib's default executor. By using this event-driven approach, you can eliminate the need for reference counters, and potentially getting trapped in complex cyclic reference disasters.</p>
+<p>We can achieve this using a channel, creating a future that handles events received from the channel, and attaching that future to GLib's default executor. Whenever we program the signals in our widgets, we will attach the <code>Sender</code> to the <code>connect_method()</code>, pass an <code>Event</code> enum through that <code>Sender</code>, and then the <code>Receiver</code> in the event-handler will <code>match</code> that <code>Event</code> and do what we want to the application.</p>
 <pre><pre class="playground"><code class="language-rust">use std::process;
 
 enum Event {

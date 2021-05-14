@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Overview of GTK Basics - Michael's GTK Rust Tutorial — 2021 Edition</title>
+        <title>About GTK - Michael's GTK Rust Tutorial — 2021 Edition</title>
         
         
 
@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="01-gtk-basics.html"><strong aria-hidden="true">1.</strong> Overview of GTK Basics</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -165,7 +165,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="overview-of-gtk-basics"><a class="header" href="#overview-of-gtk-basics">Overview of GTK Basics</a></h1>
+                        <h1 id="about-gtk"><a class="header" href="#about-gtk">About GTK</a></h1>
 <blockquote>
 <p><strong>WARNING</strong>: This tutorial assumes familiarity with Rust.</p>
 </blockquote>
@@ -175,9 +175,8 @@
 <p>GTK uses GLib both for it's object system and asynchronous runtime. Every widget is a GObject class, and most widget classes inherit multiple layers of GTK widget classes. Widgets schedule tasks for concurrent execution on the default async executor (<code>gtk::MainContext::default()</code>), and register signals that react to various property and state changes.</p>
 <p>Luckily for us, the behaviors of every class implemented in GTK can be conveniently represented as a trait in Rust. Even better, GTK fully supports a feature known as &quot;GObject Introspection&quot;, which is a convenient way of automatically generating quality bindings in other programming languages. This allowed GTK to have first class bindings in a short amount of time.</p>
 <h2 id="widgets-are-objects"><a class="header" href="#widgets-are-objects">Widgets are objects</a></h2>
-<p>As for what that means to us, <code>GObjects</code> are heap-allocated with interior mutability. Behaviorally, they operate very similarly to how you would expect to work with a <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> type in Rust.</p>
-<p>You'll never be required to have unique ownership or a mutable reference to modify a widget. When you clone a GObject, you are creating a new strong reference to the object. When all strong references have been dropped, the destructor for that object is run.</p>
-<p>However, cyclic references are possible with strong references which can prevent the strong count from ever reaching 0, so there's an option to downgrade them into a weak reference. We'll be designing our software in a way that mitigates the need for this though.</p>
+<p>As for what that means to us, <code>GObjects</code> are heap-allocated with interior mutability. Behaviorally, they operate very similarly to how you would expect to work with a <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> type in Rust. You'll never be required to have unique ownership or a mutable reference to modify a widget, as a result.</p>
+<p>When you clone a GObject, you are creating a new strong reference to the object. When all strong references have been dropped, the destructor for that object is run. However, cyclic references are possible with strong references which can prevent the strong count from ever reaching 0, so there's an option to downgrade them into a weak reference. We'll be designing our software in a way that mitigates the need for this though.</p>
 <h2 id="widgets-have-inheritance"><a class="header" href="#widgets-have-inheritance">Widgets have inheritance</a></h2>
 <p>Being built in an object-oriented fashion, widgets are built by inheriting other widgets. So a <code>gtk::Box</code> is a subclass of <code>gtk::Container</code>, which is also a subclass of <code>gtk::Widget</code>; and therefore we can downgrade a <code>gtk::Box</code> into a <code>gtk::Container</code>, and we can further downgrade that into a <code>gtk::Widget</code>.</p>
 <p>There may be times when an API hands you a <code>gtk::Widget</code>, and you'll need to upgrade that widget into a more specific type of widget if you want to access methods from that widget's class.</p>
