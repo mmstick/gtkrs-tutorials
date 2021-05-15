@@ -168,7 +168,10 @@
                         <h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
 <p>In every GTK application that I write, I start by setting up an event handler and attaching it to GLib's default executor. By using this event-driven approach, you can eliminate the need for reference counters, and potentially getting trapped in complex cyclic reference disasters.</p>
 <p>We can achieve this using a channel, creating a future that handles events received from the channel, and attaching that future to GLib's default executor. Whenever we program the signals in our widgets, we will attach the <code>Sender</code> to the <code>connect_method()</code>, pass an <code>Event</code> enum through that <code>Sender</code>, and then the <code>Receiver</code> in the event-handler will <code>match</code> that <code>Event</code> and do what we want to the application.</p>
-<pre><pre class="playground"><code class="language-rust">use std::process;
+<pre><pre class="playground"><code class="language-rust">#[macro_use]
+extern crate cascade;
+
+use std::process;
 
 enum Event {
     Clicked

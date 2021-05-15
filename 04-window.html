@@ -166,6 +166,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window with a Button</a></h1>
+<h2 id="using-glib-as-an-async-runtime"><a class="header" href="#using-glib-as-an-async-runtime">Using GLib as an async runtime</a></h2>
 <p>First, let's make ourselves a convenience function for blocking on a future:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -177,105 +178,80 @@ fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Then, we'll create an <code>App</code> struct that will hold our most important widgets and state that we'll interact with throughout application lifetime. To start out, this will be a simple <code>gtk::Container</code> that contains a single <code>gtk::Button</code>. The button will have a border of 4 units around it, and upon clicking it, it will send an <code>Event::Clicked</code>. Once we create the <code>gtk::Button</code>, we'll create a <code>gtk::Box</code> and add the button to it. It's important to note that you have to call <code>.show_all()</code> on the container to have the widgets inside of the container shown in the app.</p>
+<p>This will schedule our futures to execute on the main thread, alongside all of the futures scheduled by GTK itself. Using <code>glib::MainContext::get_thread_default()</code> will get an executor for the thread where you are calling this from. This can be useful if you're wanting to spawn a future on a background thread for running your background tasks. There is also an option of using <code>glib::ThreadPool</code>, which gives you a multi-threaded executor which defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds.</p>
+<h2 id="creating-the-app-struct"><a class="header" href="#creating-the-app-struct">Creating the App struct</a></h2>
+<p>I typically have a single <code>App</code> struct where all application state and GTK widgets that are regularly interacted with are stored. We're going to start with a struct that contains a <code>gtk::Button</code> and a <code>u32</code> &quot;clicked&quot; variable.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[macro_use]
-extern crate cascade;
-
-use async_channel::Sender;
+</span>use async_channel::Sender;
 
 struct App {
-    pub container: gtk::Box,
     pub button: gtk::Button,
     pub clicked: u32,
 }
 
 impl App {
-    pub fn new(tx: Sender&lt;Event&gt;) -&gt; Self {
-        let button = cascade! {
-            gtk::Button::with_label(&quot;Click Me&quot;);
-            ..set_border_width(4);
-            ..connect_clicked(move |_| {
-                block_on(tx.send(Event::Clicked));
-            });
-        };
-
-        let container = cascade! {
-            gtk::Box::new(gtk::Orientation::Vertical, 0);
-            ..add(&amp;button);
-            ..show_all();
-        };
-
-        Self { container, button, clicked: 0 }
-    }
+    pub fn new(tx: Sender&lt;Event&gt;) -&gt; Self {}
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Then we'll add this to our application and attach it to a &quot;Toplevel&quot; <code>gtk::Window</code>:</p>
+<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>connect_signal()</code> method that is called on a widget. The <code>connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
+<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
+<h2 id="creating-widgets-for-our-app"><a class="header" href="#creating-widgets-for-our-app">Creating widgets for our app</a></h2>
+<p>First, we will create the button that we will have the user click. The button will have a label which reads, &quot;Click Me&quot;. The border will be set to 4 so that the button isn't hugging the edges of the container it is attached to. And then will program it to send an event when it is clicked.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>    let (tx, rx) = async_channel::unbounded();
-
-    let mut app = App::new(tx);
-
-    cascade! {
-        gtk::Window::new(gtk::WindowType::Toplevel);
-        ..set_title(&quot;First GTK App&quot;);
-        ..add(&amp;app.container);
-        ..connect_delete_event(move |_, _| {
-            gtk::main_quit();
-            gtk::Inhibit(false)
-        });
-        ..show_all();
-    };
-
-    gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
-
-    // Processes all application events received from signals
-    let event_handler = async move {
-        while let Ok(event) = rx.recv().await {
-            match event {
-                Event::Clicked =&gt; {
-                    app.clicked += 1;
-                    app.button.set_label(&amp;format!(&quot;I have been clicked {} times&quot;, app.clicked));
-                }
-            }
-        }
-    };
-
-    // GLib has an executor in the background that will
-    // asynchronously handle our events on this thread
-    glib::MainContext::default().spawn_local(event_handler);
+</span>let button = cascade! {
+    gtk::Button::with_label(&quot;Click Me&quot;);
+    ..set_border_width(4);
+    ..connect_clicked(move |_| {
+        block_on(tx.send(Event::Clicked));
+    });
+};
 <span class="boring">}
 </span></code></pre></pre>
-<p>Note that we have programmed the <code>delete_event</code> to call <code>gtk::main_quit()</code> when it is invoked. This is called when you exit the program by keyboard shortcut or clicking the close button. You can also set an icon to be shown for the application by invoking <code>gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);</code>. In our event-handler, we increment the <code>app.clicked</code> state each time it's called, and then update the button's label.</p>
-<p>Your application source code should look like this now:</p>
-<pre><pre class="playground"><code class="language-rust">#[macro_use]
-extern crate cascade;
-
-use async_channel::Sender;
-use gtk::prelude::*;
-use std::future::Future;
-use std::process;
-
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
-    glib::MainContext::default().block_on(future)
-}
-
-enum Event {
-    Clicked
-}
-
-struct App {
-    pub container: gtk::Box,
-    pub button: gtk::Button,
-    pub clicked: u32,
-}
-
-impl App {
+<p>Note that since we are using an async channel, the sender has to be awaited when it is sending a value. We can use GLib's default executor to await our send.</p>
+<p>Next is creating a container widget to hold our button. This container will also invoke <code>show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let container = cascade! {
+    gtk::Box::new(gtk::Orientation::Vertical, 0);
+    ..add(&amp;button);
+    ..show_all();
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>add()</code> method. The <code>set_title()</code> method will set the title of your application. The <code>connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let _window = cascade! {
+    gtk::Window::new(gtk::WindowType::Toplevel);
+    ..add(&amp;container);
+    ..set_title(&quot;First GTK App&quot;);
+    ..connect_delete_event(move |_, _| {
+        gtk::main_quit();
+        gtk::Inhibit(false)
+    });
+    ..show_all();
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>One last thing that should be done for window managers is to set a default icon for the application:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we can finally return our <code>App</code> struct, which should look like so:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl App {
     pub fn new(tx: Sender&lt;Event&gt;) -&gt; Self {
         let button = cascade! {
             gtk::Button::with_label(&quot;Click Me&quot;);
@@ -291,11 +267,27 @@ impl App {
             ..show_all();
         };
 
-        Self { container, button, clicked: 0 }
+        let _window = cascade! {
+            gtk::Window::new(gtk::WindowType::Toplevel);
+            ..set_title(&quot;First GTK App&quot;);
+            ..add(&amp;container);
+            ..connect_delete_event(move |_, _| {
+                gtk::main_quit();
+                gtk::Inhibit(false)
+            });
+            ..show_all();
+        };
+
+        gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
+
+        Self { button, clicked: 0 }
     }
 }
-
-fn main() {
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="responding-to-the-clicked-event"><a class="header" href="#responding-to-the-clicked-event">Responding to the clicked event</a></h2>
+<p>In the example below, you can see that we have passed ownership of the <code>App</code> into the event handler. The <code>clicked</code> property is incremented whenever we receive <code>Event::Clicked</code>. The button's label is updated to show how many times it has been clicked.</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
     glib::set_program_name(&quot;First GTK App&quot;.into());
     glib::set_application_name(&quot;First GTK App&quot;);
 
@@ -309,19 +301,6 @@ fn main() {
     let (tx, rx) = async_channel::unbounded();
 
     let mut app = App::new(tx);
-
-    cascade! {
-        gtk::Window::new(gtk::WindowType::Toplevel);
-        ..set_title(&quot;First GTK App&quot;);
-        ..add(&amp;app.container);
-        ..connect_delete_event(move |_, _| {
-            gtk::main_quit();
-            gtk::Inhibit(false)
-        });
-        ..show_all();
-    };
-
-    gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
 
     // Processes all application events received from signals
     let event_handler = async move {

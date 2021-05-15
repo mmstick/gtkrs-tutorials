@@ -187,7 +187,10 @@ cargo add gtk glib async-channel cascade
 </code></pre>
 <h3 id="initializing-gtk"><a class="header" href="#initializing-gtk">Initializing GTK</a></h3>
 <p>Now we're ready to start with code. Lets start by setting your application's name, and initializing GTK.</p>
-<pre><pre class="playground"><code class="language-rust">use std::process;
+<pre><pre class="playground"><code class="language-rust">#[macro_use]
+extern crate cascade;
+
+use std::process;
 
 fn main() {
     glib::set_program_name(&quot;First GTK App&quot;.into());
