@@ -331,6 +331,7 @@ impl App {
 };
 <span class="boring">}
 </span></code></pre></pre>
+<h2 id="creating-the-window"><a class="header" href="#creating-the-window">Creating the window</a></h2>
 <p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>add()</code> method. The <code>set_title()</code> method will set the title of your application. The <code>connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
