@@ -207,7 +207,7 @@ impl App {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
     ..connect_clicked(move |_| {
-        block_on(tx.send(Event::Clicked));
+        let _ = block_on(tx.send(Event::Clicked));
     });
 };
 <span class="boring">}
@@ -323,6 +323,7 @@ impl App {
     gtk::main();
 }
 </code></pre></pre>
+<p>You may run the application with <code>cargo run</code> and try it out.</p>
 
                     </main>
 

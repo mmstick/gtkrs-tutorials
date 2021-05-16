@@ -166,8 +166,41 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
-<p>In every GTK application that I write, I start by setting up an event handler and attaching it to GLib's default executor. By using this event-driven approach, you can eliminate the need for reference counters, and potentially getting trapped in complex cyclic reference disasters.</p>
-<p>We can achieve this using a channel, creating a future that handles events received from the channel, and attaching that future to GLib's default executor. Whenever we program the signals in our widgets, we will attach the <code>Sender</code> to the <code>connect_method()</code>, pass an <code>Event</code> enum through that <code>Sender</code>, and then the <code>Receiver</code> in the event-handler will <code>match</code> that <code>Event</code> and do what we want to the application.</p>
+<p>In every GTK application that I write, I start by setting up an event handler for processing all of the events received from widgets in the application, as well as events received from background processes. Using this event-driven approach, you can eliminate the need for reference counters, or the need to share any data across widget signals.</p>
+<p>In this model, all application state and widgets can be maintained in one central location of your application, or within compartmentalized regions that make sense for your application. Because each widget signal will only require to contain a <code>Sender</code> in order to send an <code>Event</code> to your event handler, which can then fetch whatever information it needs from any widget in its possession. Therefore, the event handler contains exclusive ownership over all widgets and application state.</p>
+<h2 id="setting-it-up"><a class="header" href="#setting-it-up">Setting it up</a></h2>
+<p>To achieve this, we need an async channel that we can get from the <code>async-channel</code> crate:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let (tx, rx) = async_channel::unbounded();
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we need some event variants that our channel will emit:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Event {
+    Clicked
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then we will attach the receiver to a future which merely loops on our receiver forever:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let event_handler = async move {
+    while let Ok(event) = rx.recv().await {
+        match event {
+            Event::Clicked =&gt; {
+
+            }
+        }
+    }
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Your source code should now look like so, and you are now ready to continue to setting up a window with a clickable button.</p>
 <pre><pre class="playground"><code class="language-rust">#[macro_use]
 extern crate cascade;
 

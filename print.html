@@ -174,9 +174,9 @@
 <p>Before we begin, it is important to know a few things about GTK itself. The architecture that GTK is built upon strongly influences the way that we will interact with it. Yet I won't dive too deeply into the details, because we only need cover what's most important for us as a consumer of the API in Rust.</p>
 <h2 id="gtk-heavily-uses-glib"><a class="header" href="#gtk-heavily-uses-glib">GTK heavily uses GLib</a></h2>
 <p>GTK is a GUI toolkit built strongly around GLib and it's GLib Object System — which we'll simply call GObject. GLib is essentially a high level cross-platform standard library for C. The GObject portion of GLib enables programming with an object-oriented paradigm.</p>
-<p>GTK uses GLib both for it's object system and asynchronous runtime. Every widget is a GObject class, and most widget classes inherit multiple layers of GTK widget classes. Widgets schedule tasks for concurrent execution on the default async executor (<code>gtk::MainContext::default()</code>), and register signals that react to various property and state changes.</p>
+<p>GTK uses GLib both for it's object system and asynchronous runtime. Every widget type is a GObject class, and most widget classes inherit multiple layers of GTK widget classes. Widgets schedule tasks for concurrent execution on the default async executor (<code>gtk::MainContext::default()</code>), and register signals that react to various property and state changes.</p>
 <p>Luckily for us, the behaviors of every class implemented in GTK can be conveniently represented as a trait in Rust. Even better, GTK fully supports a feature known as &quot;GObject Introspection&quot;, which is a convenient way of automatically generating quality bindings in other programming languages. This allowed GTK to have first class bindings in a short amount of time.</p>
-<h2 id="widgets-are-objects"><a class="header" href="#widgets-are-objects">Widgets are objects</a></h2>
+<h2 id="initialized-widgets-are-objects"><a class="header" href="#initialized-widgets-are-objects">Initialized widgets are objects</a></h2>
 <p>As for what that means to us, <code>GObjects</code> are heap-allocated with interior mutability. Behaviorally, they operate very similarly to how you would expect to work with a <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> type in Rust. You'll never be required to have unique ownership or a mutable reference to modify a widget, as a result.</p>
 <p>When you clone a GObject, you are creating a new strong reference to the object. When all strong references have been dropped, the destructor for that object is run. However, cyclic references are possible with strong references which can prevent the strong count from ever reaching 0, so there's an option to downgrade them into a weak reference. We'll be designing our software in a way that mitigates the need for this though.</p>
 <h2 id="widgets-have-inheritance"><a class="header" href="#widgets-have-inheritance">Widgets have inheritance</a></h2>
@@ -229,8 +229,41 @@ fn main() {
 }
 </code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
-<p>In every GTK application that I write, I start by setting up an event handler and attaching it to GLib's default executor. By using this event-driven approach, you can eliminate the need for reference counters, and potentially getting trapped in complex cyclic reference disasters.</p>
-<p>We can achieve this using a channel, creating a future that handles events received from the channel, and attaching that future to GLib's default executor. Whenever we program the signals in our widgets, we will attach the <code>Sender</code> to the <code>connect_method()</code>, pass an <code>Event</code> enum through that <code>Sender</code>, and then the <code>Receiver</code> in the event-handler will <code>match</code> that <code>Event</code> and do what we want to the application.</p>
+<p>In every GTK application that I write, I start by setting up an event handler for processing all of the events received from widgets in the application, as well as events received from background processes. Using this event-driven approach, you can eliminate the need for reference counters, or the need to share any data across widget signals.</p>
+<p>In this model, all application state and widgets can be maintained in one central location of your application, or within compartmentalized regions that make sense for your application. Because each widget signal will only require to contain a <code>Sender</code> in order to send an <code>Event</code> to your event handler, which can then fetch whatever information it needs from any widget in its possession. Therefore, the event handler contains exclusive ownership over all widgets and application state.</p>
+<h2 id="setting-it-up"><a class="header" href="#setting-it-up">Setting it up</a></h2>
+<p>To achieve this, we need an async channel that we can get from the <code>async-channel</code> crate:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let (tx, rx) = async_channel::unbounded();
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we need some event variants that our channel will emit:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Event {
+    Clicked
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then we will attach the receiver to a future which merely loops on our receiver forever:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let event_handler = async move {
+    while let Ok(event) = rx.recv().await {
+        match event {
+            Event::Clicked =&gt; {
+
+            }
+        }
+    }
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Your source code should now look like so, and you are now ready to continue to setting up a window with a clickable button.</p>
 <pre><pre class="playground"><code class="language-rust">#[macro_use]
 extern crate cascade;
 
@@ -314,7 +347,7 @@ impl App {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
     ..connect_clicked(move |_| {
-        block_on(tx.send(Event::Clicked));
+        let _ = block_on(tx.send(Event::Clicked));
     });
 };
 <span class="boring">}
@@ -430,6 +463,7 @@ impl App {
     gtk::main();
 }
 </code></pre></pre>
+<p>You may run the application with <code>cargo run</code> and try it out.</p>
 
                     </main>
 
