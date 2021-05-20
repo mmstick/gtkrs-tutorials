@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Getting Started - Michael's GTK Rust Tutorial — 2021 Edition</title>
+        <title>Using GLib as an async runtime - Michael's GTK Rust Tutorial — 2021 Edition</title>
         
         
 
@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html" class="active"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-glib-runtime.html"><strong aria-hidden="true">3.</strong> Using GLib as an async runtime</a></li><li class="chapter-item expanded "><a href="04-event-driven.html"><strong aria-hidden="true">4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="05-window.html"><strong aria-hidden="true">5.</strong> Creating a Window with a Button</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-glib-runtime.html" class="active"><strong aria-hidden="true">3.</strong> Using GLib as an async runtime</a></li><li class="chapter-item expanded "><a href="04-event-driven.html"><strong aria-hidden="true">4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="05-window.html"><strong aria-hidden="true">5.</strong> Creating a Window with a Button</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -165,59 +165,126 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
-<h2 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h2>
-<p>Before we begin, ensure that you have the necessary development files installed for GTK. On Debian platforms, you will need:</p>
-<ul>
-<li><code>libgtk-3-dev</code> for GTK3</li>
-<li><code>libgtk-4-dev</code> for GTK4</li>
-<li><code>libwebkit2gtk-4.0-dev</code> if embedding a GTK WebKit View</li>
-<li><code>libgtksourceview-4-dev</code> if embedding a GTK Source View</li>
-</ul>
-<p>On the Rust side of things, you should install:</p>
-<ul>
-<li><code>cargo-edit</code> with <code>cargo install cargo-edit</code>, because that'll make adding dependencies to your project easier.</li>
-<li><code>rust-analyzer</code> in your IDE so that you'll have instant feedback about warnings and errors as you type</li>
-</ul>
-<h2 id="api-documentation"><a class="header" href="#api-documentation">API Documentation</a></h2>
-<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website here: https://gtk-rs.org/docs-src/. To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implemenets, such as <code>ContainerExt</code> or <code>WidgetExt</code>. Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a headerbar. This is because this method will define each property before the widget is initialized.</p>
-<h2 id="cascade-macro"><a class="header" href="#cascade-macro">Cascade Macro</a></h2>
-<p>This a macro that I will use often. It is an alternative to the builder patterns that I find more useful in general, because the builder pattern only works up to creation of the widget, rather than calling methods on created widget itself, such as adding widgets to a container. Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
+                        <h1 id="using-glib-as-an-async-runtime"><a class="header" href="#using-glib-as-an-async-runtime">Using GLib as an async runtime</a></h1>
+<p>Before moving further, we should know that we can leverage the same async runtime that GTK uses for spawning and scheduling its tasks.</p>
+<h2 id="spawning-tasks-on-the-default-executor"><a class="header" href="#spawning-tasks-on-the-default-executor">Spawning tasks on the default executor</a></h2>
+<p>This will schedule our futures to execute on the main thread, alongside all of the futures scheduled by GTK itself.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let container = cascade! {
-    gtk::Box::new(gtk::Orientation::Vertical, 0);
-    ..add(&amp;widget1);
-    ..add(&amp;widget2);
-};
+</span>use std::future::Future;
+
+/// Spawns a task on the default executor and waits to receive its output
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    glib::MainContext::default().block_on(future)
+}
+
+/// Spawns a task in the background on the default executor
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
+    glib::MainContext::default().spawn_local(future);
+}
 <span class="boring">}
 </span></code></pre></pre>
-<h2 id="creating-your-project"><a class="header" href="#creating-your-project">Creating Your Project</a></h2>
-<p>Now we're going to start the process of actually building our first GTK application. Create your project, and add the following dependencies that we need to get started:</p>
-<pre><code>cargo new first-gtk-app
-cd first-gtk-app
-cargo add gtk glib async-channel cascade
-</code></pre>
-<h3 id="initializing-gtk"><a class="header" href="#initializing-gtk">Initializing GTK</a></h3>
-<p>Now we're ready to start with code. Lets start by setting your application's name, and initializing GTK.</p>
-<pre><pre class="playground"><code class="language-rust">#[macro_use]
-extern crate cascade;
+<h2 id="spawning-tasks-on-the-current-threads-executor"><a class="header" href="#spawning-tasks-on-the-current-threads-executor">Spawning tasks on the current thread's executor</a></h2>
+<p>Using this approach, you can spawn futures onto the executor that is registered to the thread you are blocking from. By default, there is no executor initialized for newly-spawned threads, so you'll have to create and assign them to the current thread when <code>glib::MainContext::get_thread_default()</code> returns <code>None</code>.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::future::Future;
 
-use gtk::prelude::*;
-use std::process;
+fn thread_context() -&gt; glib::MainContext {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+}
+
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
+}
+
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
+    thread_context().spawn_local(future);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is useful if you spawn a background thread and want to execute your futures using a GLib executor on that thread.</p>
+<h2 id="spawning-tasks-on-a-thread-pool"><a class="header" href="#spawning-tasks-on-a-thread-pool">Spawning tasks on a thread pool</a></h2>
+<p>There is also an option of using <code>glib::ThreadPool</code>, which gives you exactly that. It defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds. The pool does not have a requirement on mutability for spawning blocking tasks, so you can initialize this as a global variable using <code>once_cell::sync::Lazy</code> to use around your application, if you prefer this over a Rust-native thread pool like <code>rayon</code>. Perhaps to leverage system libraries.</p>
+<pre><pre class="playground"><code class="language-rust">use std::time::Duration;
+use std::thread::sleep;
 
 fn main() {
-    glib::set_program_name(&quot;First GTK App&quot;.into());
-    glib::set_application_name(&quot;First GTK App&quot;);
+    let pool = glib::ThreadPool::new_shared(None)
+        .expect(&quot;failed to spawn thread pool&quot;);
 
-    if gtk::init().is_err() {
-        eprintln!(&quot;failed to initialize GTK Application&quot;);
-        process::exit(1);
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(1));
+        println!(&quot;First Task&quot;);
+    });
+
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(2));
+        println!(&quot;Second Task&quot;);
+    });
+
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(3));
+        println!(&quot;Third Task&quot;);
+    });
+
+    while pool.get_unprocessed() &gt; 0 {
+        sleep(Duration::from_secs(1));
     }
+}
+</code></pre></pre>
+<h2 id="spawning-futures-on-a-threadpool"><a class="header" href="#spawning-futures-on-a-threadpool">Spawning futures on a ThreadPool</a></h2>
+<p>However, this thread pool takes closures as inputs, rather than futures. So if you want to use for futures, you can combine it with the thread default executor above.</p>
+<pre><pre class="playground"><code class="language-rust">use async_io::Timer;
+use std::time::Duration;
+use std::thread::sleep;
+use std::future::Future;
 
-    // Thread will block here until the application is quit
-    gtk::main();
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+        .block_on(future)
+}
+
+fn main() {
+    let pool = glib::ThreadPool::new_shared(None)
+        .expect(&quot;failed to spawn thread pool&quot;);
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(1)).await;
+            println!(&quot;First Task&quot;);
+        })
+    });
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(2)).await;
+            println!(&quot;Second Task&quot;);
+        })
+    });
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(3)).await;
+            println!(&quot;Third Task&quot;);
+        })
+    });
+
+    while pool.get_unprocessed() &gt; 0 {
+        sleep(Duration::from_secs(1));
+    }
 }
 </code></pre></pre>
 
@@ -226,13 +293,13 @@ fn main() {
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="01-about-gtk.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="02-getting-started.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="03-glib-runtime.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="04-event-driven.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -244,13 +311,13 @@ fn main() {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="01-about-gtk.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="02-getting-started.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="03-glib-runtime.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="04-event-driven.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 

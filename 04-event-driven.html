@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Creating a Window with a Button - Michael's GTK Rust Tutorial — 2021 Edition</title>
+        <title>Event-Driven Approach - Michael's GTK Rust Tutorial — 2021 Edition</title>
         
         
 
@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="04-window.html" class="active"><strong aria-hidden="true">4.</strong> Creating a Window with a Button</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-glib-runtime.html"><strong aria-hidden="true">3.</strong> Using GLib as an async runtime</a></li><li class="chapter-item expanded "><a href="04-event-driven.html" class="active"><strong aria-hidden="true">4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="05-window.html"><strong aria-hidden="true">5.</strong> Creating a Window with a Button</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -165,130 +165,53 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window with a Button</a></h1>
-<h2 id="using-glib-as-an-async-runtime"><a class="header" href="#using-glib-as-an-async-runtime">Using GLib as an async runtime</a></h2>
-<p>First, let's make ourselves a convenience function for blocking on a future:</p>
+                        <h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
+<p>In every GTK application that I write, I start by setting up an event handler for processing all of the events received from widgets in the application, as well as events received from background processes. Using this event-driven approach, you can eliminate the need for reference counters, or the need to share any data across widget signals.</p>
+<p>In this model, all application state and widgets can be maintained in one central location of your application, or within compartmentalized regions that make sense for your application. Because each widget signal will only require to contain a <code>Sender</code> in order to send an <code>Event</code> to your event handler, which can then fetch whatever information it needs from any widget in its possession. Therefore, the event handler contains exclusive ownership over all widgets and application state.</p>
+<h2 id="setting-it-up"><a class="header" href="#setting-it-up">Setting it up</a></h2>
+<p>To achieve this, we need an async channel that we can get from the <code>async-channel</code> crate:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use std::future::Future;
-
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
-    glib::MainContext::default().block_on(future)
+</span>let (tx, rx) = async_channel::unbounded();
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we need some event variants that our channel will emit:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Event {
+    Clicked
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>This will schedule our futures to execute on the main thread, alongside all of the futures scheduled by GTK itself. Using <code>glib::MainContext::get_thread_default()</code> will get an executor for the thread where you are calling this from. This can be useful if you're wanting to spawn a future on a background thread for running your background tasks. There is also an option of using <code>glib::ThreadPool</code>, which gives you a multi-threaded executor which defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds.</p>
-<h2 id="creating-the-app-struct"><a class="header" href="#creating-the-app-struct">Creating the App struct</a></h2>
-<p>I typically have a single <code>App</code> struct where all application state and GTK widgets that are regularly interacted with are stored. We're going to start with a struct that contains a <code>gtk::Button</code> and a <code>u32</code> &quot;clicked&quot; variable.</p>
+<p>Then we will attach the receiver to a future which merely loops on our receiver forever:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use async_channel::Sender;
+</span>let event_handler = async move {
+    while let Ok(event) = rx.recv().await {
+        match event {
+            Event::Clicked =&gt; {
 
-struct App {
-    pub button: gtk::Button,
-    pub clicked: u32,
-}
-
-impl App {
-    pub fn new(tx: Sender&lt;Event&gt;) -&gt; Self {}
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>connect_signal()</code> method that is called on a widget. The <code>connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
-<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
-<h2 id="creating-widgets-for-our-app"><a class="header" href="#creating-widgets-for-our-app">Creating widgets for our app</a></h2>
-<p>First, we will create the button that we will have the user click. The button will have a label which reads, &quot;Click Me&quot;. The border will be set to 4 so that the button isn't hugging the edges of the container it is attached to. And then will program it to send an event when it is clicked.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let button = cascade! {
-    gtk::Button::with_label(&quot;Click Me&quot;);
-    ..set_border_width(4);
-    ..connect_clicked(move |_| {
-        let _ = block_on(tx.send(Event::Clicked));
-    });
-};
-<span class="boring">}
-</span></code></pre></pre>
-<p>Note that since we are using an async channel, the sender has to be awaited when it is sending a value. We can use GLib's default executor to await our send.</p>
-<p>Next is creating a container widget to hold our button. This container will also invoke <code>show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let container = cascade! {
-    gtk::Box::new(gtk::Orientation::Vertical, 0);
-    ..add(&amp;button);
-    ..show_all();
-};
-<span class="boring">}
-</span></code></pre></pre>
-<h2 id="creating-the-window"><a class="header" href="#creating-the-window">Creating the window</a></h2>
-<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>add()</code> method. The <code>set_title()</code> method will set the title of your application. The <code>connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let _window = cascade! {
-    gtk::Window::new(gtk::WindowType::Toplevel);
-    ..add(&amp;container);
-    ..set_title(&quot;First GTK App&quot;);
-    ..connect_delete_event(move |_, _| {
-        gtk::main_quit();
-        gtk::Inhibit(false)
-    });
-    ..show_all();
-};
-<span class="boring">}
-</span></code></pre></pre>
-<p>One last thing that should be done for window managers is to set a default icon for the application:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
-<span class="boring">}
-</span></code></pre></pre>
-<p>Now we can finally return our <code>App</code> struct, which should look like so:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl App {
-    pub fn new(tx: Sender&lt;Event&gt;) -&gt; Self {
-        let button = cascade! {
-            gtk::Button::with_label(&quot;Click Me&quot;);
-            ..set_border_width(4);
-            ..connect_clicked(move |_| {
-                let _ = block_on(tx.send(Event::Clicked));
-            });
-        };
-
-        let container = cascade! {
-            gtk::Box::new(gtk::Orientation::Vertical, 0);
-            ..add(&amp;button);
-            ..show_all();
-        };
-
-        let _window = cascade! {
-            gtk::Window::new(gtk::WindowType::Toplevel);
-            ..set_title(&quot;First GTK App&quot;);
-            ..add(&amp;container);
-            ..connect_delete_event(move |_, _| {
-                gtk::main_quit();
-                gtk::Inhibit(false)
-            });
-            ..show_all();
-        };
-
-        gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
-
-        Self { button, clicked: 0 }
+            }
+        }
     }
-}
+};
 <span class="boring">}
 </span></code></pre></pre>
-<h2 id="responding-to-the-clicked-event"><a class="header" href="#responding-to-the-clicked-event">Responding to the clicked event</a></h2>
-<p>In the example below, you can see that we have passed ownership of the <code>App</code> into the event handler. The <code>clicked</code> property is incremented whenever we receive <code>Event::Clicked</code>. The button's label is updated to show how many times it has been clicked.</p>
-<pre><pre class="playground"><code class="language-rust">fn main() {
+<p>Your source code should now look like so, and you are now ready to continue to setting up a window with a clickable button.</p>
+<pre><pre class="playground"><code class="language-rust">#[macro_use]
+extern crate cascade;
+
+use gtk::prelude::*;
+use std::process;
+
+enum Event {
+    Clicked
+}
+
+fn main() {
     glib::set_program_name(&quot;First GTK App&quot;.into());
     glib::set_application_name(&quot;First GTK App&quot;);
 
@@ -301,15 +224,12 @@ impl App {
     // Attach `tx` to our widgets, and `rx` to our event handler
     let (tx, rx) = async_channel::unbounded();
 
-    let mut app = App::new(tx);
-
     // Processes all application events received from signals
     let event_handler = async move {
         while let Ok(event) = rx.recv().await {
             match event {
                 Event::Clicked =&gt; {
-                    app.clicked += 1;
-                    app.button.set_label(&amp;format!(&quot;I have been clicked {} times&quot;, app.clicked));
+
                 }
             }
         }
@@ -323,18 +243,21 @@ impl App {
     gtk::main();
 }
 </code></pre></pre>
-<p>You may run the application with <code>cargo run</code> and try it out.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="03-event-driven.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="03-glib-runtime.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
+                        
+                            <a rel="next" href="05-window.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -344,11 +267,15 @@ impl App {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="03-event-driven.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="03-glib-runtime.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
+                
+                    <a rel="next" href="05-window.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                 
             </nav>
 

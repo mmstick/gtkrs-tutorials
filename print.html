@@ -97,7 +97,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-event-driven.html"><strong aria-hidden="true">3.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="04-window.html"><strong aria-hidden="true">4.</strong> Creating a Window with a Button</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="01-about-gtk.html"><strong aria-hidden="true">1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="02-getting-started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="03-glib-runtime.html"><strong aria-hidden="true">3.</strong> Using GLib as an async runtime</a></li><li class="chapter-item expanded "><a href="04-event-driven.html"><strong aria-hidden="true">4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="05-window.html"><strong aria-hidden="true">5.</strong> Creating a Window with a Button</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -172,7 +172,7 @@
 <p><strong>WARNING</strong>: This tutorial assumes familiarity with Rust.</p>
 </blockquote>
 <p>Before we begin, it is important to know a few things about GTK itself. The architecture that GTK is built upon strongly influences the way that we will interact with it. Yet I won't dive too deeply into the details, because we only need cover what's most important for us as a consumer of the API in Rust.</p>
-<h2 id="gtk-heavily-uses-glib"><a class="header" href="#gtk-heavily-uses-glib">GTK heavily uses GLib</a></h2>
+<h2 id="gtk-is-built-around-glib"><a class="header" href="#gtk-is-built-around-glib">GTK is built around GLib</a></h2>
 <p>GTK is a GUI toolkit built strongly around GLib and it's GLib Object System — which we'll simply call GObject. GLib is essentially a high level cross-platform standard library for C. The GObject portion of GLib enables programming with an object-oriented paradigm.</p>
 <p>GTK uses GLib both for it's object system and asynchronous runtime. Every widget type is a GObject class, and most widget classes inherit multiple layers of GTK widget classes. Widgets schedule tasks for concurrent execution on the default async executor (<code>gtk::MainContext::default()</code>), and register signals that react to various property and state changes.</p>
 <p>Luckily for us, the behaviors of every class implemented in GTK can be conveniently represented as a trait in Rust. Even better, GTK fully supports a feature known as &quot;GObject Introspection&quot;, which is a convenient way of automatically generating quality bindings in other programming languages. This allowed GTK to have first class bindings in a short amount of time.</p>
@@ -183,7 +183,7 @@
 <p>Being built in an object-oriented fashion, widgets are built by inheriting other widgets. So a <code>gtk::Box</code> is a subclass of <code>gtk::Container</code>, which is also a subclass of <code>gtk::Widget</code>; and therefore we can downgrade a <code>gtk::Box</code> into a <code>gtk::Container</code>, and we can further downgrade that into a <code>gtk::Widget</code>.</p>
 <p>There may be times when an API hands you a <code>gtk::Widget</code>, and you'll need to upgrade that widget into a more specific type of widget if you want to access methods from that widget's class.</p>
 <p>Or there may also be times when you just want to simplify your code and downgrade a widget into a <code>gtk::Widget</code> because you're passing it onto something that takes any kind of widget as an input.</p>
-<h2 id="widget-classes-are-traits"><a class="header" href="#widget-classes-are-traits">Widget classes are traits</a></h2>
+<h2 id="widget-classes-have-traits"><a class="header" href="#widget-classes-have-traits">Widget classes have traits</a></h2>
 <p>In the GTK-rs implementation, methods from classes are conveniently stored in traits. The <code>gtk::Widget</code>, <code>gtk::Container</code>, and <code>gtk::Box</code> classes have their methods stored in their respective <code>gtk::WidgetExt</code>, <code>gtk::ContainerExt</code>, and <code>gtk::BoxExt</code> traits. This will allow you to conveniently handle your widgets in a generic fashion. Maybe you have a function that can be perfectly written as <code>fn function&lt;W: WidgetExt&gt;(widget: &amp;W) {}</code>,</p>
 <h2 id="gtk-is-not-thread-safe"><a class="header" href="#gtk-is-not-thread-safe">GTK is not thread-safe</a></h2>
 <p>Finally, although GObjects can be thread-safe, GTK widgets are most definitely not. You should not attempt to send GTK widgets across thread boundaries, which thankfully the Rust type system will not permit. GTK widgets must be created and interacted with exclusively on the thread that GTK was initialized on.</p>
@@ -202,6 +202,20 @@
 <li><code>cargo-edit</code> with <code>cargo install cargo-edit</code>, because that'll make adding dependencies to your project easier.</li>
 <li><code>rust-analyzer</code> in your IDE so that you'll have instant feedback about warnings and errors as you type</li>
 </ul>
+<h2 id="api-documentation"><a class="header" href="#api-documentation">API Documentation</a></h2>
+<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website here: https://gtk-rs.org/docs-src/. To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implemenets, such as <code>ContainerExt</code> or <code>WidgetExt</code>. Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a headerbar. This is because this method will define each property before the widget is initialized.</p>
+<h2 id="cascade-macro"><a class="header" href="#cascade-macro">Cascade Macro</a></h2>
+<p>This a macro that I will use often. It is an alternative to the builder patterns that I find more useful in general, because the builder pattern only works up to creation of the widget, rather than calling methods on created widget itself, such as adding widgets to a container. Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let container = cascade! {
+    gtk::Box::new(gtk::Orientation::Vertical, 0);
+    ..add(&amp;widget1);
+    ..add(&amp;widget2);
+};
+<span class="boring">}
+</span></code></pre></pre>
 <h2 id="creating-your-project"><a class="header" href="#creating-your-project">Creating Your Project</a></h2>
 <p>Now we're going to start the process of actually building our first GTK application. Create your project, and add the following dependencies that we need to get started:</p>
 <pre><code>cargo new first-gtk-app
@@ -213,6 +227,7 @@ cargo add gtk glib async-channel cascade
 <pre><pre class="playground"><code class="language-rust">#[macro_use]
 extern crate cascade;
 
+use gtk::prelude::*;
 use std::process;
 
 fn main() {
@@ -226,6 +241,128 @@ fn main() {
 
     // Thread will block here until the application is quit
     gtk::main();
+}
+</code></pre></pre>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="using-glib-as-an-async-runtime"><a class="header" href="#using-glib-as-an-async-runtime">Using GLib as an async runtime</a></h1>
+<p>Before moving further, we should know that we can leverage the same async runtime that GTK uses for spawning and scheduling its tasks.</p>
+<h2 id="spawning-tasks-on-the-default-executor"><a class="header" href="#spawning-tasks-on-the-default-executor">Spawning tasks on the default executor</a></h2>
+<p>This will schedule our futures to execute on the main thread, alongside all of the futures scheduled by GTK itself.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::future::Future;
+
+/// Spawns a task on the default executor and waits to receive its output
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    glib::MainContext::default().block_on(future)
+}
+
+/// Spawns a task in the background on the default executor
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
+    glib::MainContext::default().spawn_local(future);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="spawning-tasks-on-the-current-threads-executor"><a class="header" href="#spawning-tasks-on-the-current-threads-executor">Spawning tasks on the current thread's executor</a></h2>
+<p>Using this approach, you can spawn futures onto the executor that is registered to the thread you are blocking from. By default, there is no executor initialized for newly-spawned threads, so you'll have to create and assign them to the current thread when <code>glib::MainContext::get_thread_default()</code> returns <code>None</code>.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::future::Future;
+
+fn thread_context() -&gt; glib::MainContext {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+}
+
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
+}
+
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
+    thread_context().spawn_local(future);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is useful if you spawn a background thread and want to execute your futures using a GLib executor on that thread.</p>
+<h2 id="spawning-tasks-on-a-thread-pool"><a class="header" href="#spawning-tasks-on-a-thread-pool">Spawning tasks on a thread pool</a></h2>
+<p>There is also an option of using <code>glib::ThreadPool</code>, which gives you exactly that. It defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds. The pool does not have a requirement on mutability for spawning blocking tasks, so you can initialize this as a global variable using <code>once_cell::sync::Lazy</code> to use around your application, if you prefer this over a Rust-native thread pool like <code>rayon</code>. Perhaps to leverage system libraries.</p>
+<pre><pre class="playground"><code class="language-rust">use std::time::Duration;
+use std::thread::sleep;
+
+fn main() {
+    let pool = glib::ThreadPool::new_shared(None)
+        .expect(&quot;failed to spawn thread pool&quot;);
+
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(1));
+        println!(&quot;First Task&quot;);
+    });
+
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(2));
+        println!(&quot;Second Task&quot;);
+    });
+
+    let _ = pool.push(|| {
+        sleep(Duration::from_secs(3));
+        println!(&quot;Third Task&quot;);
+    });
+
+    while pool.get_unprocessed() &gt; 0 {
+        sleep(Duration::from_secs(1));
+    }
+}
+</code></pre></pre>
+<h2 id="spawning-futures-on-a-threadpool"><a class="header" href="#spawning-futures-on-a-threadpool">Spawning futures on a ThreadPool</a></h2>
+<p>However, this thread pool takes closures as inputs, rather than futures. So if you want to use for futures, you can combine it with the thread default executor above.</p>
+<pre><pre class="playground"><code class="language-rust">use async_io::Timer;
+use std::time::Duration;
+use std::thread::sleep;
+use std::future::Future;
+
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+        .block_on(future)
+}
+
+fn main() {
+    let pool = glib::ThreadPool::new_shared(None)
+        .expect(&quot;failed to spawn thread pool&quot;);
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(1)).await;
+            println!(&quot;First Task&quot;);
+        })
+    });
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(2)).await;
+            println!(&quot;Second Task&quot;);
+        })
+    });
+
+    let _ = pool.push(|| {
+        block_on(async {
+            Timer::after(Duration::from_secs(3)).await;
+            println!(&quot;Third Task&quot;);
+        })
+    });
+
+    while pool.get_unprocessed() &gt; 0 {
+        sleep(Duration::from_secs(1));
+    }
 }
 </code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
@@ -267,6 +404,7 @@ fn main() {
 <pre><pre class="playground"><code class="language-rust">#[macro_use]
 extern crate cascade;
 
+use gtk::prelude::*;
 use std::process;
 
 enum Event {
@@ -306,19 +444,18 @@ fn main() {
 }
 </code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window with a Button</a></h1>
-<h2 id="using-glib-as-an-async-runtime"><a class="header" href="#using-glib-as-an-async-runtime">Using GLib as an async runtime</a></h2>
-<p>First, let's make ourselves a convenience function for blocking on a future:</p>
+<p>Let's start by setting up a convenience function for spawning futures on the default executor. This will be necessary to send messages through the async channel.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
-    glib::MainContext::default().block_on(future)
+/// Spawns a task on the default executor and waits to receive its output
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
+    glib::MainContext::default().spawn_local(future);
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>This will schedule our futures to execute on the main thread, alongside all of the futures scheduled by GTK itself. Using <code>glib::MainContext::get_thread_default()</code> will get an executor for the thread where you are calling this from. This can be useful if you're wanting to spawn a future on a background thread for running your background tasks. There is also an option of using <code>glib::ThreadPool</code>, which gives you a multi-threaded executor which defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds.</p>
 <h2 id="creating-the-app-struct"><a class="header" href="#creating-the-app-struct">Creating the App struct</a></h2>
 <p>I typically have a single <code>App</code> struct where all application state and GTK widgets that are regularly interacted with are stored. We're going to start with a struct that contains a <code>gtk::Button</code> and a <code>u32</code> &quot;clicked&quot; variable.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -347,7 +484,10 @@ impl App {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
     ..connect_clicked(move |_| {
-        let _ = block_on(tx.send(Event::Clicked));
+        let tx = tx.clone();
+        spawn(async move {
+            let _ = tx.send(Event::Clicked).await;
+        });
     });
 };
 <span class="boring">}
@@ -398,7 +538,10 @@ impl App {
             gtk::Button::with_label(&quot;Click Me&quot;);
             ..set_border_width(4);
             ..connect_clicked(move |_| {
-                let _ = block_on(tx.send(Event::Clicked));
+                let tx = tx.clone();
+                spawn(async move {
+                    let _ = tx.send(Event::Clicked).await;
+                });
             });
         };
 
