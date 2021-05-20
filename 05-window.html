@@ -172,7 +172,7 @@
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
-/// Spawns a task on the default executor and waits to receive its output
+/// Spawns a task on the default executor, without waiting for it to complete
 pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
     glib::MainContext::default().spawn_local(future);
 }
@@ -195,8 +195,8 @@ impl App {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>connect_signal()</code> method that is called on a widget. The <code>connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
-<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
+<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>.connect_signal()</code> method that is called on a widget. The <code>.connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>.connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
+<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>.connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
 <h2 id="creating-widgets-for-our-app"><a class="header" href="#creating-widgets-for-our-app">Creating widgets for our app</a></h2>
 <p>First, we will create the button that we will have the user click. The button will have a label which reads, &quot;Click Me&quot;. The border will be set to 4 so that the button isn't hugging the edges of the container it is attached to. And then will program it to send an event when it is clicked.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -215,7 +215,11 @@ impl App {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Note that since we are using an async channel, the sender has to be awaited when it is sending a value. We can use GLib's default executor to await our send.</p>
-<p>Next is creating a container widget to hold our button. This container will also invoke <code>show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
+<blockquote>
+<p>If the sender happens to block, it could block the default executor and thereby freeze the application. If you're using an unbounded receiver, it will never block on a send, so you will not have to worry about this.</p>
+<p>When using a bounded receiver, you should ensure that the tasks is spawned on the executor so that at least the sender can safely wait for its turn to send without blocking our application. However, there is no reason to use a bounded receiver for receiving events, because you'll simply cause the executor to fill up with unresolved tasks.</p>
+</blockquote>
+<p>Next is creating a container widget to hold our button. This container will also invoke <code>.show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -227,7 +231,7 @@ impl App {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="creating-the-window"><a class="header" href="#creating-the-window">Creating the window</a></h2>
-<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>add()</code> method. The <code>set_title()</code> method will set the title of your application. The <code>connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
+<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>.add()</code> method. The <code>.set_title()</code> method will set the title of your application. The <code>.connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

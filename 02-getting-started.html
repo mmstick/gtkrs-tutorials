@@ -180,9 +180,11 @@
 <li><code>rust-analyzer</code> in your IDE so that you'll have instant feedback about warnings and errors as you type</li>
 </ul>
 <h2 id="api-documentation"><a class="header" href="#api-documentation">API Documentation</a></h2>
-<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website here: https://gtk-rs.org/docs-src/. To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implemenets, such as <code>ContainerExt</code> or <code>WidgetExt</code>. Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a headerbar. This is because this method will define each property before the widget is initialized.</p>
+<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website <a href="https://gtk-rs.org/docs-src/">here</a>.</p>
+<p>To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implements, such as <code>ContainerExt</code> or <code>WidgetExt</code>.</p>
+<p>Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a <code>gtk::HeaderBar</code>. This is because this method will define each property before the widget is initialized.</p>
 <h2 id="cascade-macro"><a class="header" href="#cascade-macro">Cascade Macro</a></h2>
-<p>This a macro that I will use often. It is an alternative to the builder patterns that I find more useful in general, because the builder pattern only works up to creation of the widget, rather than calling methods on created widget itself, such as adding widgets to a container. Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
+<p>This macro is an alternative to the builder pattern that I find more useful in general, as the builder type only works up to creation of the widget, rather than calling methods on created widget itself — such as adding widgets to a container.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -193,6 +195,7 @@
 };
 <span class="boring">}
 </span></code></pre></pre>
+<p>Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
 <h2 id="creating-your-project"><a class="header" href="#creating-your-project">Creating Your Project</a></h2>
 <p>Now we're going to start the process of actually building our first GTK application. Create your project, and add the following dependencies that we need to get started:</p>
 <pre><code>cargo new first-gtk-app

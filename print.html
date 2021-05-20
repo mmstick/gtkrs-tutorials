@@ -203,9 +203,11 @@
 <li><code>rust-analyzer</code> in your IDE so that you'll have instant feedback about warnings and errors as you type</li>
 </ul>
 <h2 id="api-documentation"><a class="header" href="#api-documentation">API Documentation</a></h2>
-<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website here: https://gtk-rs.org/docs-src/. To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implemenets, such as <code>ContainerExt</code> or <code>WidgetExt</code>. Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a headerbar. This is because this method will define each property before the widget is initialized.</p>
+<p>The API documentation generated on <a href="https://docs.rs">docs.rs</a> lacks descriptions of the APIs. If you want the most complete API documentation, you will need to reference the documentation generated on the gtk-rs website <a href="https://gtk-rs.org/docs-src/">here</a>.</p>
+<p>To navigate this API, every widget has its own type, but those types only contain methods for constructing the widget. Methods specific to each widget can be found in the <code>Ext</code> trait for that widget, such as <code>ButtonExt</code>. You may reference the widget type to see what behaviors it implements, such as <code>ContainerExt</code> or <code>WidgetExt</code>.</p>
+<p>Finally, each widget also has a <code>Builder</code> type, such as <code>ButtonBuilder</code>. In some cases, the builder type will be the only way to achieve a certain desired effect, such creating a dialog with a <code>gtk::HeaderBar</code>. This is because this method will define each property before the widget is initialized.</p>
 <h2 id="cascade-macro"><a class="header" href="#cascade-macro">Cascade Macro</a></h2>
-<p>This a macro that I will use often. It is an alternative to the builder patterns that I find more useful in general, because the builder pattern only works up to creation of the widget, rather than calling methods on created widget itself, such as adding widgets to a container. Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
+<p>This macro is an alternative to the builder pattern that I find more useful in general, as the builder type only works up to creation of the widget, rather than calling methods on created widget itself — such as adding widgets to a container.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -216,6 +218,7 @@
 };
 <span class="boring">}
 </span></code></pre></pre>
+<p>Essentially, the first statement creates your widget, and following lines that start with <code>.</code> will allow you to invoke a method on that widget, before finally returning the widget itself.</p>
 <h2 id="creating-your-project"><a class="header" href="#creating-your-project">Creating Your Project</a></h2>
 <p>Now we're going to start the process of actually building our first GTK application. Create your project, and add the following dependencies that we need to get started:</p>
 <pre><code>cargo new first-gtk-app
@@ -253,7 +256,7 @@ fn main() {
 </span>use std::future::Future;
 
 /// Spawns a task on the default executor and waits to receive its output
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
     glib::MainContext::default().block_on(future)
 }
 
@@ -270,7 +273,7 @@ pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
-fn thread_context() -&gt; glib::MainContext {
+pub fn thread_context() -&gt; glib::MainContext {
     glib::MainContext::get_thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
@@ -279,7 +282,7 @@ fn thread_context() -&gt; glib::MainContext {
         })
 }
 
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
     thread_context().block_on(future)
 }
 
@@ -288,7 +291,40 @@ pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2 id="spawning-tasks-on-a-background-thread"><a class="header" href="#spawning-tasks-on-a-background-thread">Spawning tasks on a background thread</a></h2>
 <p>This is useful if you spawn a background thread and want to execute your futures using a GLib executor on that thread.</p>
+<pre><pre class="playground"><code class="language-rust">use std::future::Future;
+
+pub fn thread_context() -&gt; glib::MainContext {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+}
+
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
+}
+
+enum BackgroundEvent { DoThis }
+
+fn main() {
+    let (bg_tx, bg_rx) = async_channel::unbounded();
+
+    std::thread::spawn(|| {
+        block_on(async move {
+            while let Ok(request) = bg_rx.recv().await {
+                match request {
+                    BackgroundEvent::DoThis =&gt; do_this().await,
+
+                }
+            }
+        });
+    });
+}
+</code></pre></pre>
 <h2 id="spawning-tasks-on-a-thread-pool"><a class="header" href="#spawning-tasks-on-a-thread-pool">Spawning tasks on a thread pool</a></h2>
 <p>There is also an option of using <code>glib::ThreadPool</code>, which gives you exactly that. It defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds. The pool does not have a requirement on mutability for spawning blocking tasks, so you can initialize this as a global variable using <code>once_cell::sync::Lazy</code> to use around your application, if you prefer this over a Rust-native thread pool like <code>rayon</code>. Perhaps to leverage system libraries.</p>
 <pre><pre class="playground"><code class="language-rust">use std::time::Duration;
@@ -313,26 +349,30 @@ fn main() {
         println!(&quot;Third Task&quot;);
     });
 
+    // Wait for tasks to complete
     while pool.get_unprocessed() &gt; 0 {
         sleep(Duration::from_secs(1));
     }
 }
 </code></pre></pre>
-<h2 id="spawning-futures-on-a-threadpool"><a class="header" href="#spawning-futures-on-a-threadpool">Spawning futures on a ThreadPool</a></h2>
+<h2 id="spawning-futures-on-a-glibthreadpool"><a class="header" href="#spawning-futures-on-a-glibthreadpool">Spawning futures on a glib::ThreadPool</a></h2>
 <p>However, this thread pool takes closures as inputs, rather than futures. So if you want to use for futures, you can combine it with the thread default executor above.</p>
 <pre><pre class="playground"><code class="language-rust">use async_io::Timer;
 use std::time::Duration;
 use std::thread::sleep;
 use std::future::Future;
 
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+fn thread_context() -&gt; glib::MainContext {
     glib::MainContext::get_thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
             ctx.push_thread_default();
             ctx
         })
-        .block_on(future)
+}
+
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
 }
 
 fn main() {
@@ -360,14 +400,16 @@ fn main() {
         })
     });
 
-    while pool.get_unprocessed() &gt; 0 {
-        sleep(Duration::from_secs(1));
-    }
+    // Wait for tasks to complete
+    block_on(async {
+        while pool.get_unprocessed() &gt; 0 {
+            Timer::after(Duration::from_secs(1)).await;
+        }
+    })
 }
 </code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="event-driven-approach"><a class="header" href="#event-driven-approach">Event-Driven Approach</a></h1>
-<p>In every GTK application that I write, I start by setting up an event handler for processing all of the events received from widgets in the application, as well as events received from background processes. Using this event-driven approach, you can eliminate the need for reference counters, or the need to share any data across widget signals.</p>
-<p>In this model, all application state and widgets can be maintained in one central location of your application, or within compartmentalized regions that make sense for your application. Because each widget signal will only require to contain a <code>Sender</code> in order to send an <code>Event</code> to your event handler, which can then fetch whatever information it needs from any widget in its possession. Therefore, the event handler contains exclusive ownership over all widgets and application state.</p>
+<p>In the event-driven approach, event handlers will capture and control access to application state. Widgets will have their signals connected to send events through a channel to these event handlers, without access to the global application state themselves. States can be moved and exclusively owned by their respective event handlers; thereby eliminating the need for reference counters, or the need to share your application states with every widget's signal.</p>
 <h2 id="setting-it-up"><a class="header" href="#setting-it-up">Setting it up</a></h2>
 <p>To achieve this, we need an async channel that we can get from the <code>async-channel</code> crate:</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -398,6 +440,15 @@ fn main() {
         }
     }
 };
+<span class="boring">}
+</span></code></pre></pre>
+<p>And spawn this event handler on the default executor:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// GLib has an executor in the background that will
+// asynchronously handle our events on this thread
+glib::MainContext::default().spawn_local(event_handler);
 <span class="boring">}
 </span></code></pre></pre>
 <p>Your source code should now look like so, and you are now ready to continue to setting up a window with a clickable button.</p>
@@ -443,6 +494,9 @@ fn main() {
     gtk::main();
 }
 </code></pre></pre>
+<h2 id="avoid-blocking-the-default-executor"><a class="header" href="#avoid-blocking-the-default-executor">Avoid blocking the default executor</a></h2>
+<p>Take careful note that because this async task has been spawned on the same executor as all of GTK's own tasks, you must be careful to avoid doing anything that would block your event handler. If your event handler were to block, the default <code>MainContext</code> would block with it, thereby freezing the GUI.</p>
+<p>Tasks that require a lot of CPU and/or I/O should be performed in a background thread. Generally, the only code that should be executed on the default context is code that interacts directly with the widgets — fetching information from widgets, creating new widgets, and updating existing ones.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window with a Button</a></h1>
 <p>Let's start by setting up a convenience function for spawning futures on the default executor. This will be necessary to send messages through the async channel.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -450,7 +504,7 @@ fn main() {
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
-/// Spawns a task on the default executor and waits to receive its output
+/// Spawns a task on the default executor, without waiting for it to complete
 pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
     glib::MainContext::default().spawn_local(future);
 }
@@ -473,8 +527,8 @@ impl App {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>connect_signal()</code> method that is called on a widget. The <code>connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
-<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
+<p>When creating the application, we will take ownership of the <code>Sender</code> that we created earlier, and pass this into every <code>.connect_signal()</code> method that is called on a widget. The <code>.connect_signal()</code> methods will create a future on the main context that idles until the condition for that future has been emitted. A <code>gtk::Button</code>, for example, has a <code>.connect_clicked()</code> method which will have its callbacks invoked when <code>clicked</code> is emitted — which happens on a click of the button.</p>
+<p>Note that you may connect multiple callbacks onto the same signal. If you wish to remove one, you should be careful to store the <code>SignalHandlerId</code> that is returned from the <code>.connect_signal()</code> method. Then call <code>widget.disconnect(id)</code> to remove the signal registered to that widget. If you only wish to temporarily block a signal, you can call <code>widget.block_signal(id)</code> and <code>widget.unblock_signal(id)</code> respectively.</p>
 <h2 id="creating-widgets-for-our-app"><a class="header" href="#creating-widgets-for-our-app">Creating widgets for our app</a></h2>
 <p>First, we will create the button that we will have the user click. The button will have a label which reads, &quot;Click Me&quot;. The border will be set to 4 so that the button isn't hugging the edges of the container it is attached to. And then will program it to send an event when it is clicked.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -493,7 +547,11 @@ impl App {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Note that since we are using an async channel, the sender has to be awaited when it is sending a value. We can use GLib's default executor to await our send.</p>
-<p>Next is creating a container widget to hold our button. This container will also invoke <code>show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
+<blockquote>
+<p>If the sender happens to block, it could block the default executor and thereby freeze the application. If you're using an unbounded receiver, it will never block on a send, so you will not have to worry about this.</p>
+<p>When using a bounded receiver, you should ensure that the tasks is spawned on the executor so that at least the sender can safely wait for its turn to send without blocking our application. However, there is no reason to use a bounded receiver for receiving events, because you'll simply cause the executor to fill up with unresolved tasks.</p>
+</blockquote>
+<p>Next is creating a container widget to hold our button. This container will also invoke <code>.show_all()</code> to make the container visible, and all of the widgets inside the container.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -505,7 +563,7 @@ impl App {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="creating-the-window"><a class="header" href="#creating-the-window">Creating the window</a></h2>
-<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>add()</code> method. The <code>set_title()</code> method will set the title of your application. The <code>connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
+<p>Next we we will create the <code>Toplevel</code> window for this application, and attach our container to the window. We will set a title, connect the event to be called when window is deleted, and also set the default icon for our application. The <code>Toplevel</code> window is the main window of your application. A window can only have one widget attached to it, which we will assign with the <code>.add()</code> method. The <code>.set_title()</code> method will set the title of your application. The <code>.connect_delete_event</code> method is invoked whenever the window is destroyed, and we will program this to call <code>gtk::main_quit()</code> to stop the mainloop, thereby having <code>gtk::main()</code> return, which has our application quit.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

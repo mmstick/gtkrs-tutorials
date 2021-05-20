@@ -175,7 +175,7 @@
 </span>use std::future::Future;
 
 /// Spawns a task on the default executor and waits to receive its output
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
     glib::MainContext::default().block_on(future)
 }
 
@@ -192,7 +192,7 @@ pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
-fn thread_context() -&gt; glib::MainContext {
+pub fn thread_context() -&gt; glib::MainContext {
     glib::MainContext::get_thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
@@ -201,7 +201,7 @@ fn thread_context() -&gt; glib::MainContext {
         })
 }
 
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
     thread_context().block_on(future)
 }
 
@@ -210,7 +210,40 @@ pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2 id="spawning-tasks-on-a-background-thread"><a class="header" href="#spawning-tasks-on-a-background-thread">Spawning tasks on a background thread</a></h2>
 <p>This is useful if you spawn a background thread and want to execute your futures using a GLib executor on that thread.</p>
+<pre><pre class="playground"><code class="language-rust">use std::future::Future;
+
+pub fn thread_context() -&gt; glib::MainContext {
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
+}
+
+pub fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
+}
+
+enum BackgroundEvent { DoThis }
+
+fn main() {
+    let (bg_tx, bg_rx) = async_channel::unbounded();
+
+    std::thread::spawn(|| {
+        block_on(async move {
+            while let Ok(request) = bg_rx.recv().await {
+                match request {
+                    BackgroundEvent::DoThis =&gt; do_this().await,
+
+                }
+            }
+        });
+    });
+}
+</code></pre></pre>
 <h2 id="spawning-tasks-on-a-thread-pool"><a class="header" href="#spawning-tasks-on-a-thread-pool">Spawning tasks on a thread pool</a></h2>
 <p>There is also an option of using <code>glib::ThreadPool</code>, which gives you exactly that. It defaults to the number of virtual CPU cores in the system, and by default parks threads that have been idle for more than 15 seconds. The pool does not have a requirement on mutability for spawning blocking tasks, so you can initialize this as a global variable using <code>once_cell::sync::Lazy</code> to use around your application, if you prefer this over a Rust-native thread pool like <code>rayon</code>. Perhaps to leverage system libraries.</p>
 <pre><pre class="playground"><code class="language-rust">use std::time::Duration;
@@ -235,26 +268,30 @@ fn main() {
         println!(&quot;Third Task&quot;);
     });
 
+    // Wait for tasks to complete
     while pool.get_unprocessed() &gt; 0 {
         sleep(Duration::from_secs(1));
     }
 }
 </code></pre></pre>
-<h2 id="spawning-futures-on-a-threadpool"><a class="header" href="#spawning-futures-on-a-threadpool">Spawning futures on a ThreadPool</a></h2>
+<h2 id="spawning-futures-on-a-glibthreadpool"><a class="header" href="#spawning-futures-on-a-glibthreadpool">Spawning futures on a glib::ThreadPool</a></h2>
 <p>However, this thread pool takes closures as inputs, rather than futures. So if you want to use for futures, you can combine it with the thread default executor above.</p>
 <pre><pre class="playground"><code class="language-rust">use async_io::Timer;
 use std::time::Duration;
 use std::thread::sleep;
 use std::future::Future;
 
-fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+fn thread_context() -&gt; glib::MainContext {
     glib::MainContext::get_thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
             ctx.push_thread_default();
             ctx
         })
-        .block_on(future)
+}
+
+fn block_on&lt;F&gt;(future: F) -&gt; F::Output where F: Future {
+    thread_context().block_on(future)
 }
 
 fn main() {
@@ -282,9 +319,12 @@ fn main() {
         })
     });
 
-    while pool.get_unprocessed() &gt; 0 {
-        sleep(Duration::from_secs(1));
-    }
+    // Wait for tasks to complete
+    block_on(async {
+        while pool.get_unprocessed() &gt; 0 {
+            Timer::after(Duration::from_secs(1)).await;
+        }
+    })
 }
 </code></pre></pre>
 
