@@ -3,10 +3,8 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title></title>
+        <title>Using gtk::Application - Event-Driven GTK by Example — 2021 Edition</title>
         
-        
-        <base href="/">
         
 
 
@@ -97,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window With a Button</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Handling Events in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window With a Button</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html" class="active"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Handling Events in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -167,15 +165,94 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h1 id="using-gtkapplication"><a class="header" href="#using-gtkapplication">Using gtk::Application</a></h1>
+<h2 id="utilsrs"><a class="header" href="#utilsrs">utils.rs</a></h2>
+<p>Before we begin, we need to add some utility functions that we'll be using throughout the application:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::future::Future;
+
+pub fn thread_context() -&gt; glib::MainContext {
+    glib::MainContext::get_thread_default().unwrap_or_else(|| {
+        let ctx = glib::MainContext::new();
+        ctx.push_thread_default();
+        ctx
+    })
+}
+
+pub fn spawn&lt;F&gt;(future: F)
+where
+    F: Future&lt;Output = ()&gt; + 'static,
+{
+    glib::MainContext::default().spawn_local(future);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>We will be spawning a background thread and executing tasks on it, so we'll need a convenience function for fetching the thread-default context. Likewise, we're going to spawning tasks on the global default context, so we'll need that here as well.</p>
+<h2 id="mainrs"><a class="header" href="#mainrs">main.rs</a></h2>
+<p>This time we will create a GTK application using the proper <code>gtk::Application</code> setup process. This will take care of initializing GTK for you, and registers your application with an application ID so that you can prevent your application from spawning multiple instances.</p>
+<pre><pre class="playground"><code class="language-rust">#[macro_use]
+extern crate cascade;
+
+mod app;
+mod background;
+mod widgets;
+mod utils;
+
+use self::app::{App, Event};
+use gio::prelude::*;
+
+pub const APP_ID: &amp;str = &quot;io.github.mmstick.ToDo&quot;;
+
+fn main() {
+    let app_name = &quot;Todo&quot;;
+
+    glib::set_program_name(Some(app_name));
+    glib::set_application_name(app_name);
+
+    let app = gtk::Application::new(
+        Some(APP_ID),
+        Default::default()
+    ).expect(&quot;failed to init application&quot;);
+
+    app.connect_activate(|app| {
+        let (tx, rx) = async_channel::unbounded();
+
+        let mut app = App::new(app, tx);
+
+        let event_handler = async move {
+            while let Ok(event) = rx.recv().await {
+                match event {
+
+                }
+            }
+        };
+
+        utils::spawn(event_handler);
+    });
+
+    app.run(&amp;[]);
+}
+</code></pre></pre>
+<p>Calling <code>gtk::Application::new()</code> will run <code>gtk::init()</code> and register your application by the <code>APP_ID</code> that we defined. The general practice for application IDs is to use <a href="https://en.wikipedia.org/wiki/Reverse_domain_name_notation">Reverse domain name notation (RDNN)</a>.</p>
+<p><code>gtk::Application::connect_activate()</code> defines what the application should do when it has been activated. This method receives a reference to the <code>gtk::Application</code> itself, which we will later use to create the <code>gtk::ApplicationWindow</code>, which is our top level <code>gtk::Window</code> for our application.</p>
+<p><code>gtk::Application::run()</code> will then invoke <code>gtk::main()</code></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
+                            <a rel="prev" href="2x00-intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
 
+                        
+                            <a rel="next" href="2x02-events.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -185,7 +262,15 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
+                    <a rel="prev" href="2x00-intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
+                
+                    <a rel="next" href="2x02-events.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                 
             </nav>
 
