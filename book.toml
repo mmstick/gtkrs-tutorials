@@ -1,0 +1,6 @@
+[book]
+authors = ["Michael Aaron Murphy"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Event-Driven GTK by Example — 2021 Edition"
