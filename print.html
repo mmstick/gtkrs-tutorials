@@ -97,7 +97,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window With a Button</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Handling Events in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window with a Button</a></li><li class="chapter-item expanded "><a href="1x06-gtk-widgets.html"><strong aria-hidden="true">1.6.</strong> GTK Widget Reference</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Handling Events in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li><li class="chapter-item expanded "><a href="2x09-check-buttons.html"><strong aria-hidden="true">2.9.</strong> Marking &amp; Removing Done Tasks with CheckButtons</a></li><li class="chapter-item expanded "><a href="2x10-multi-list.html"><strong aria-hidden="true">2.10.</strong> Managing Multiple ToDo Lists</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -518,7 +518,7 @@ fn main() {
 <h2 id="avoid-blocking-the-default-executor"><a class="header" href="#avoid-blocking-the-default-executor">Avoid blocking the default executor</a></h2>
 <p>Take careful note that because this async task has been spawned on the same executor as all of GTK's own tasks, you must be careful to avoid doing anything that would block your event handler. If your event handler were to block, the default <code>MainContext</code> would block with it, thereby freezing the GUI.</p>
 <p>Tasks that require a lot of CPU and/or I/O should be performed in a background thread. Generally, the only code that should be executed on the default context is code that interacts directly with the widgets — fetching information from widgets, creating new widgets, and updating existing ones.</p>
-<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window With a Button</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-a-window-with-a-button"><a class="header" href="#creating-a-window-with-a-button">Creating a Window with a Button</a></h1>
 <p>Let's start by setting up a convenience function for spawning futures on the default executor. This will be necessary to send messages through the async channel.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -686,6 +686,86 @@ impl App {
 }
 </code></pre></pre>
 <p>You may run the application with <code>cargo run</code> and try it out.</p>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="gtk-widget-reference"><a class="header" href="#gtk-widget-reference">GTK Widget Reference</a></h1>
+<p>List of roughly every widget included in GTK</p>
+<h2 id="containers"><a class="header" href="#containers">Containers</a></h2>
+<p>Containers control the behavior and layout of the widgets within them.</p>
+<ul>
+<li><a href="">AspectFrame</a>: Ensures that the widget retains the same aspect when resized</li>
+<li><a href="">Box</a>: Lays widgets in vertical or horizontal layouts</li>
+<li><a href="">ButtonBox</a>: Arranges buttons within the container, and themes may style buttons packed this way in a nicer way</li>
+<li><a href="">Expander</a>: Shows/hides a widget with a button that expands to reveal a hidden widget</li>
+<li><a href="">FlowBox</a>: Lays widgets horizontally, and dynamically shifts them to new rows as the parent container shrinks</li>
+<li><a href="">Frame</a>: Displays a frame around a widget</li>
+<li><a href="">Grid</a>: Lays widgets within a grid of rows and columns, with each widget occupying a X,Y position with a defined width and height</li>
+<li><a href="">HeaderBar</a>: Replaces the title bar, where widgets can be packed from the start, the center, or the end of the bar</li>
+<li><a href="">Notebook</a>: Identical to a stack, but has tabs for switching between widgets. Essentially a Stack + StackSwitcher with a set style</li>
+<li><a href="">Paned</a>: Containers two widgets side-by-side with a boundary between them that allows the user to resize between them</li>
+<li><a href="">Revealer</a>: Conceals and reveals a widget with an animation</li>
+<li><a href="">ScrolledWindow</a>: Makes the contained widget scrollable</li>
+<li><a href="">Stack</a>: Stores multiple widgets, but only one widget is shown at a time. May be combined with a StackSwitcher to have tabs</li>
+<li><a href="">Toolbar</a>: Bar at the top of the window for containing tool items</li>
+</ul>
+<h2 id="lists"><a class="header" href="#lists">Lists</a></h2>
+<p>Containers with selectable widgets</p>
+<ul>
+<li><a href="">ComboBox</a>: Used in conjuction with a tree model to show a list of options to select from</li>
+<li><a href="">ComboBoxText</a>: Streamlined variant of a ComboBox to choose from a list of text options</li>
+<li><a href="">IconView</a>: Think of a file browser with mouse drag selections. Essentially a FlowBox-like container with a grid of icons with text</li>
+<li><a href="">ListBox</a>: Each widget is an interactive row in a list, which may be activated or clicked, and may support multiple selections</li>
+<li><a href="">TreeView</a>: Used to present tabular data, with each row being an object in the list, and each column a field of that object</li>
+</ul>
+<h2 id="text"><a class="header" href="#text">Text</a></h2>
+<p>Containers which display or receive text</p>
+<ul>
+<li><a href="">Label</a>: Displays text without any ability to copy or edit the text</li>
+<li><a href="">Entry</a>: Text box for a single line of text</li>
+<li><a href="">TextView</a>: Multi-line text box</li>
+<li><a href="">SearchEntry</a>: Entry designed for use for searches</li>
+<li><a href="">SearchBar</a>: Toolbar that reveals a search entry when the user starts typing</li>
+</ul>
+<h2 id="buttons"><a class="header" href="#buttons">Buttons</a></h2>
+<p>Widgets that can be clicked or activated by keyboard</p>
+<ul>
+<li><a href="">AppChooserButton</a>: Button that shows an app chooser dialog</li>
+<li><a href="">Button</a>: Interactive widget that may contain text, an image, or other widgets</li>
+<li><a href="">CheckButton</a>: Check mark with a label that can be toggled on/off</li>
+<li><a href="">ColorButton</a>: Displays a color and shows a color chooser dialog to select a different one</li>
+<li><a href="">FileChooserButton</a>: Shows a file chooser dialog to select file(s) or folder(s)</li>
+<li><a href="">FontButton</a>: Displays a font and shows a font chooser dialog ot select a different one</li>
+<li><a href="">LinkButton</a>: Hyperlink text button for linking to a URI</li>
+<li><a href="">LockButton</a>: Button with a lock icon for unlocking / locking privileged options</li>
+<li><a href="">MenuButton</a>: Button for showing a popover menu on click</li>
+<li><a href="">RadioButton</a>: When grouped with other radio buttons, only one button may be activate</li>
+<li><a href="">ScaleButton</a>: Button that pops up a scale</li>
+<li><a href="">SpinButton</a>: Number entry with buttons for incrementing and decrementing</li>
+<li><a href="">StackSidebar</a>: Vertical tabs for a stack</li>
+<li><a href="">StackSwitcher</a>: Horizontal tabs for a stack</li>
+<li><a href="">Switch</a>: Toggle button represented as an off/on switch</li>
+<li><a href="">ToggleButton</a>: Button that toggles between being pressed in and unpressed</li>
+<li><a href="">VolumeButton</a>: Button that pops up a volume scale</li>
+</ul>
+<h2 id="display"><a class="header" href="#display">Display</a></h2>
+<p>Widgets that display things</p>
+<ul>
+<li><a href="">DrawingArea</a>: Provides a canvas for drawing images onto</li>
+<li><a href="">EventBox</a>: Makes it possible for a widget to receive button / mouse events</li>
+<li><a href="">GLArea</a>: Context for rendering OpenGL onto</li>
+<li><a href="">Image</a>: Displays a picture</li>
+<li><a href="">InfoBar</a>: Hidden bar that is revealed when info or an error is to be shown</li>
+<li><a href="">LevelBar</a>: Shows a level of a scale</li>
+<li><a href="">ProgressBar</a>: Shows a progress bar</li>
+<li><a href="">Separator</a>: Shows a horizontal or vertical separator</li>
+<li><a href="">ShortcutLabel</a>: Keyboard shortcut label</li>
+<li><a href="">Spinner</a>: Shows a spinning animation</li>
+<li><a href="">Statusbar</a>: Displays information at the bottom of the window</li>
+</ul>
+<h2 id="misc"><a class="header" href="#misc">Misc</a></h2>
+<p>Everything else</p>
+<ul>
+<li><a href="">PlacesSidebar</a>: The Places sidebar of a file browser</li>
+<li><a href="">Plug</a> / <a href="">Socket</a>: Allows sharing widgets across windows</li>
+</ul>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="todo"><a class="header" href="#todo">ToDo</a></h1>
 <p>One of the most common GUI applications that are used as practice is to design a ToDo list. There are a myriad of ways to go about creating one, but we are going to opt for the event-driven approach with a <a href="https://docs.rs/slotmap">slotmap</a>.</p>
 <p>The slotmap crate provides a &quot;container with persistent unique keys to access stored values, <code>SlotMap</code>&quot;. Essentially, this is map-type collection where the act of inserting a new value creates a new unique key to the slot where the value was placed. When a key is removed, any further requests for the slot that the key was associated with will fail, but new keys can be generated that reuse the vacant slots.</p>
@@ -697,10 +777,11 @@ cargo add async-channel cascade fomat-macros gio glib gtk slotmap xdg
 </code></pre>
 <p>Then inside the src folder, structure your project like so:</p>
 <pre><code>src/
-    widgets.rs
     app.rs
     background.rs
     main.rs
+    utils.rs
+    widgets.rs
 </code></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="using-gtkapplication"><a class="header" href="#using-gtkapplication">Using gtk::Application</a></h1>
 <h2 id="utilsrs"><a class="header" href="#utilsrs">utils.rs</a></h2>
@@ -801,7 +882,7 @@ fn main() {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>slotmap::new_key_type!{
+</span>slotmap::new_key_type! {
     pub struct TaskEntity;
 }
 
@@ -838,20 +919,27 @@ pub enum Event {
 <p>Events are listed in the order that they are most-likely to be called in, with the most-called events first.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="handling-events-in-the-background"><a class="header" href="#handling-events-in-the-background">Handling Events in the Background</a></h1>
 <h2 id="mainrs-2"><a class="header" href="#mainrs-2">main.rs</a></h2>
-<p>To handle events in the background, and within the app itself, we're going to have two channels. One channel will be responding for sending application events to our UI event handler. The other will handle background events received from our event handler.</p>
+<p>To handle events in the background, and within the app itself, we will need two separate channels. One receiver will listen for application events in the main thread which manages the UI. The other receiver will listen for events from the application in a background thread. The separation is useful to offload blocking code from the main thread to prevent the application from ever freezing. It is good practice to start with this approach with any GTK application. Application freezes are very frustrating to those using your applications, and are so easily resolved by building your applications in this way from the beginning.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let (tx, rx) = async_channel::unbounded();
+</span>// Channel for UI events in the main thread
+let (tx, rx) = async_channel::unbounded();
+
+// Channel for background events to the background thread
 let (btx, brx) = async_channel::unbounded();
 <span class="boring">}
 </span></code></pre></pre>
-<p>Next we will spawn a thread, and pass both a clone of our application event sender, and the background event receiver. The glib crate has a convenient macro for cloning types into a closure, which we can see here:</p>
+<p>Next we will spawn a thread, and pass both a clone of our application event sender, and the background event receiver. The glib crate provides a <a href="https://gtk-rs.org/docs/glib/macro.clone.html#passing-a-strong-reference">clone macro</a> which can be used</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>std::thread::spawn(glib::clone!(@strong tx =&gt; move || {
+</span>// Take ownership of a copy of the UI event sender (tx),
+// and the background event receiver (brx).
+std::thread::spawn(glib::clone!(@strong tx =&gt; move || {
+    // Fetch the executor registered for this thread
     utils::thread_context()
+        // Block this thread on an event loop future
         .block_on(background::run(tx, brx));
 }));
 <span class="boring">}
@@ -1190,6 +1278,8 @@ pub fn load(&amp;mut self, data: String) {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="marking--removing-done-tasks-with-checkbuttons"><a class="header" href="#marking--removing-done-tasks-with-checkbuttons">Marking &amp; Removing Done Tasks with CheckButtons</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="managing-multiple-todo-lists"><a class="header" href="#managing-multiple-todo-lists">Managing Multiple ToDo Lists</a></h1>
 
                     </main>
 
