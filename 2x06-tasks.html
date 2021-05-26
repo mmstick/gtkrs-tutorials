@@ -200,11 +200,11 @@ for task in self.tasks.values_mut() {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>    let task = Task::new(row);
+</span>let task = Task::new(row);
 
-    self.container.attach(&amp;task.entry, 0, row, 1, 1);
-    self.container.attach(&amp;task.insert, 1, row, 1, 1);
-    self.container.attach(&amp;task.remove, 2, row, 1, 1);
+self.container.attach(&amp;task.entry, 0, row, 1, 1);
+self.container.attach(&amp;task.insert, 1, row, 1, 1);
+self.container.attach(&amp;task.remove, 2, row, 1, 1);
 <span class="boring">}
 </span></code></pre></pre>
 <p>We should also ensure that the newly-added <code>gtk::Entry</code> will grab the focus of our keyboard</p>
