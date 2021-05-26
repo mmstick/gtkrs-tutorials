@@ -97,7 +97,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window with a Button</a></li><li class="chapter-item expanded "><a href="1x06-gtk-widgets.html"><strong aria-hidden="true">1.6.</strong> GTK Widget Reference</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Handling Events in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li><li class="chapter-item expanded "><a href="2x09-check-buttons.html"><strong aria-hidden="true">2.9.</strong> Marking &amp; Removing Done Tasks with CheckButtons</a></li><li class="chapter-item expanded "><a href="2x10-multi-list.html"><strong aria-hidden="true">2.10.</strong> Managing Multiple ToDo Lists</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="1x00-intro.html"><strong aria-hidden="true">1.</strong> Basics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="1x01-about-gtk.html"><strong aria-hidden="true">1.1.</strong> About GTK</a></li><li class="chapter-item expanded "><a href="1x02-getting-started.html"><strong aria-hidden="true">1.2.</strong> Getting Started</a></li><li class="chapter-item expanded "><a href="1x03-glib-runtime.html"><strong aria-hidden="true">1.3.</strong> Using GLib as an Async Runtime</a></li><li class="chapter-item expanded "><a href="1x04-event-driven.html"><strong aria-hidden="true">1.4.</strong> Event-Driven Approach</a></li><li class="chapter-item expanded "><a href="1x05-window.html"><strong aria-hidden="true">1.5.</strong> Creating a Window with a Button</a></li><li class="chapter-item expanded "><a href="1x06-gtk-widgets.html"><strong aria-hidden="true">1.6.</strong> GTK Widget Reference</a></li></ol></li><li class="chapter-item expanded "><a href="2x00-intro.html"><strong aria-hidden="true">2.</strong> ToDo</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="2x01-gtk-application.html"><strong aria-hidden="true">2.1.</strong> Using gtk::Application</a></li><li class="chapter-item expanded "><a href="2x02-events.html"><strong aria-hidden="true">2.2.</strong> Modeling Our Events</a></li><li class="chapter-item expanded "><a href="2x03-background-events.html"><strong aria-hidden="true">2.3.</strong> Loading and Savings in the Background</a></li><li class="chapter-item expanded "><a href="2x04-task-widget.html"><strong aria-hidden="true">2.4.</strong> Creating the Task Widget Struct</a></li><li class="chapter-item expanded "><a href="2x05-app.html"><strong aria-hidden="true">2.5.</strong> Creating the Base App</a></li><li class="chapter-item expanded "><a href="2x06-tasks.html"><strong aria-hidden="true">2.6.</strong> Inserting and Removing Tasks</a></li><li class="chapter-item expanded "><a href="2x07-save.html"><strong aria-hidden="true">2.7.</strong> Signaling When to Save</a></li><li class="chapter-item expanded "><a href="2x08-load.html"><strong aria-hidden="true">2.8.</strong> Loading Tasks From a File</a></li><li class="chapter-item expanded "><a href="2x09-check-buttons.html"><strong aria-hidden="true">2.9.</strong> Marking &amp; Removing Done Tasks with CheckButtons</a></li><li class="chapter-item expanded "><a href="2x10-multi-list.html"><strong aria-hidden="true">2.10.</strong> Managing Multiple ToDo Lists</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -767,9 +767,10 @@ impl App {
 <li><a href="">Plug</a> / <a href="">Socket</a>: Allows sharing widgets across windows</li>
 </ul>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="todo"><a class="header" href="#todo">ToDo</a></h1>
-<p>One of the most common GUI applications that are used as practice is to design a ToDo list. There are a myriad of ways to go about creating one, but we are going to opt for the event-driven approach with a <a href="https://docs.rs/slotmap">slotmap</a>.</p>
-<p>The slotmap crate provides a &quot;container with persistent unique keys to access stored values, <code>SlotMap</code>&quot;. Essentially, this is map-type collection where the act of inserting a new value creates a new unique key to the slot where the value was placed. When a key is removed, any further requests for the slot that the key was associated with will fail, but new keys can be generated that reuse the vacant slots.</p>
-<p>Each task in the ToDo list will correspond to a key in the slotmap. On launch of the application, we will load the most-recently modified note. On close, we will write any changes that have yet to be saved before quitting the application. We will also save any changes made every 5 seconds after the last modification.</p>
+<p>The first application that we will create in this tutorial series is a ToDo list. There are a myriad of ways to create them, but we are going to opt for the event-driven approach with a <a href="https://docs.rs/slotmap">slotmap</a>. Each task in the ToDo list will be stored in the SlotMap and referenced by its key. On launch of the application, we will load the most-recently modified note. On close, we will write any changes that have yet to be saved before quitting the application. We will also save any changes made every 5 seconds after the last modification.</p>
+<h2 id="what-is-a-slotmap"><a class="header" href="#what-is-a-slotmap">What is a SlotMap?</a></h2>
+<p>SlotMap is described as a &quot;container with persistent unique keys to access stored values.&quot; Essentially, it is an arena allocator with generational indices. Imagine a vector where each slot contains a version number. Odd-numbered versions indicate to the allocator that the slot is empty and ready to be filled. On insertion of a new value into a slot, the version is incremented back to an even number, and a key is returned which contains the &quot;generation&quot; version, and the indice of the slot that was used. This gives SlotMap roughly the same performance as accessing an element of an array by its indice, but with an additional version check to determine if key is still valid.</p>
+<h2 id="initialize-the-project"><a class="header" href="#initialize-the-project">Initialize the project</a></h2>
 <p>To get started, create a new project:</p>
 <pre><code>cargo new todo
 cd todo
@@ -785,29 +786,26 @@ cargo add async-channel cascade fomat-macros gio glib gtk slotmap xdg
 </code></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="using-gtkapplication"><a class="header" href="#using-gtkapplication">Using gtk::Application</a></h1>
 <h2 id="utilsrs"><a class="header" href="#utilsrs">utils.rs</a></h2>
-<p>Before we begin, we need to add some utility functions that we'll be using throughout the application:</p>
+<p>Before we begin, we need to add some utility functions that we'll be using throughout the application. We will be spawning a background thread and executing tasks on it, so we'll need a convenience function for fetching the thread-default context. Likewise, we're going to spawning tasks on the global default context, so we'll need that here as well.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use std::future::Future;
 
 pub fn thread_context() -&gt; glib::MainContext {
-    glib::MainContext::get_thread_default().unwrap_or_else(|| {
-        let ctx = glib::MainContext::new();
-        ctx.push_thread_default();
-        ctx
-    })
+    glib::MainContext::get_thread_default()
+        .unwrap_or_else(|| {
+            let ctx = glib::MainContext::new();
+            ctx.push_thread_default();
+            ctx
+        })
 }
 
-pub fn spawn&lt;F&gt;(future: F)
-where
-    F: Future&lt;Output = ()&gt; + 'static,
-{
+pub fn spawn&lt;F&gt;(future: F) where F: Future&lt;Output = ()&gt; + 'static {
     glib::MainContext::default().spawn_local(future);
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>We will be spawning a background thread and executing tasks on it, so we'll need a convenience function for fetching the thread-default context. Likewise, we're going to spawning tasks on the global default context, so we'll need that here as well.</p>
 <h2 id="mainrs"><a class="header" href="#mainrs">main.rs</a></h2>
 <p>This time we will create a GTK application using the proper <code>gtk::Application</code> setup process. This will take care of initializing GTK for you, and registers your application with an application ID so that you can prevent your application from spawning multiple instances.</p>
 <pre><pre class="playground"><code class="language-rust">#[macro_use]
@@ -821,6 +819,7 @@ mod utils;
 use self::app::App;
 use gio::prelude::*;
 
+/// The name that we will register to the system to identify our application
 pub const APP_ID: &amp;str = &quot;io.github.mmstick.ToDo&quot;;
 
 fn main() {
@@ -829,11 +828,17 @@ fn main() {
     glib::set_program_name(Some(app_name));
     glib::set_application_name(app_name);
 
+    // Initializes GTK and registers our application. gtk::Application helps us
+    // set up an application with less work
     let app = gtk::Application::new(
         Some(APP_ID),
         Default::default()
     ).expect(&quot;failed to init application&quot;);
 
+    // After the application has been registered, it will trigger an activate
+    // signal, which will give us the okay to construct our application and set
+    // up our application logic. We're going to use `app` to create the
+    // application window in the future.
     app.connect_activate(|app| {
         let (tx, rx) = async_channel::unbounded();
 
@@ -850,12 +855,11 @@ fn main() {
         utils::spawn(event_handler);
     });
 
+    // This last step performs the same duty as gtk::main()
     app.run(&amp;[]);
 }
 </code></pre></pre>
-<p>Calling <code>gtk::Application::new()</code> will run <code>gtk::init()</code> and register your application by the <code>APP_ID</code> that we defined. The general practice for application IDs is to use <a href="https://en.wikipedia.org/wiki/Reverse_domain_name_notation">Reverse domain name notation (RDNN)</a>.</p>
-<p><code>gtk::Application::connect_activate()</code> defines what the application should do when it has been activated. This method receives a reference to the <code>gtk::Application</code> itself, which we will later use to create the <code>gtk::ApplicationWindow</code>, which is our top level <code>gtk::Window</code> for our application.</p>
-<p><code>gtk::Application::run()</code> will then invoke <code>gtk::main()</code></p>
+<p>Calling <code>gtk::Application::new()</code> will run <code>gtk::init()</code> and register your application by the <code>APP_ID</code> that we defined. The general practice for application IDs is to use <a href="https://en.wikipedia.org/wiki/Reverse_domain_name_notation">Reverse domain name notation (RDNN)</a>. <code>gtk::Application::connect_activate()</code> signals that GTK is ready for us to construct our application window and set up all of our application logic. This method receives a reference to the <code>gtk::Application</code> itself, which we will later use to create the <code>gtk::ApplicationWindow</code>, which is our top level <code>gtk::Window</code> for our application. <code>gtk::Application::run()</code> will then invoke <code>gtk::main()</code> to set the whole process in motion.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="modeling-our-events"><a class="header" href="#modeling-our-events">Modeling Our Events</a></h1>
 <p>Before going to the next step, we need to think about how we will design our application, and what events our application is going to handle.</p>
 <p>A ToDo application will have the following behaviors:</p>
@@ -882,17 +886,33 @@ fn main() {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>slotmap::new_key_type! {
+</span>// Create a key type to identify the keys that we'll use for the Task SlotMap.
+slotmap::new_key_type! {
     pub struct TaskEntity;
 }
 
 pub enum Event {
+    // Insert a task below the given task, identified by its key
     Insert(TaskEntity),
+
+    // A previous task list has been fetched from a file from the background
+    // thread, and it is now our job to display it in our UI.
     Load(String),
+
+    // Signals that an entry was modified, and at some point we should save it
     Modified,
+
+    // Removes the task identified by this entity
     Remove(TaskEntity),
+
+    // Signals that we should collect up the text from each task and pass it
+    // to a background thread to save it to a file.
     SyncToDisk,
+
+    // Signals that the window has been closed, so we should clean up and quit
     Closed,
+
+    // Signals that the process has saved to disk and it is safe to exit
     Quit,
 }
 <span class="boring">}
@@ -907,9 +927,9 @@ pub enum Event {
             Event::Modified =&gt; app.modified(),
             Event::Insert(entity) =&gt; app.insert(entity),
             Event::Remove(entity) =&gt; app.remove(entity),
-            Event::SyncToDisk =&gt; app.sync_to_disk(false),
+            Event::SyncToDisk =&gt; app.sync_to_disk().await,
             Event::Load(data) =&gt; app.load(data),
-            Event::Closed =&gt; app.sync_to_disk(true),
+            Event::Closed =&gt; app.closed().await,
             Event::Quit =&gt; gtk::main_quit(),
         }
     }
@@ -917,9 +937,9 @@ pub enum Event {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Events are listed in the order that they are most-likely to be called in, with the most-called events first.</p>
-<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="handling-events-in-the-background"><a class="header" href="#handling-events-in-the-background">Handling Events in the Background</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="loading-and-saving-in-the-background"><a class="header" href="#loading-and-saving-in-the-background">Loading and Saving in the Background</a></h1>
 <h2 id="mainrs-2"><a class="header" href="#mainrs-2">main.rs</a></h2>
-<p>To handle events in the background, and within the app itself, we will need two separate channels. One receiver will listen for application events in the main thread which manages the UI. The other receiver will listen for events from the application in a background thread. The separation is useful to offload blocking code from the main thread to prevent the application from ever freezing. It is good practice to start with this approach with any GTK application. Application freezes are very frustrating to those using your applications, and are so easily resolved by building your applications in this way from the beginning.</p>
+<p>To handle events in the background, and within the app itself, we will need two separate channels. One receiver will listen for application events in the main thread which manages the UI. The other receiver will listen for events from the application in a background thread.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -930,6 +950,8 @@ let (tx, rx) = async_channel::unbounded();
 let (btx, brx) = async_channel::unbounded();
 <span class="boring">}
 </span></code></pre></pre>
+<p>Reading and writing data to a file is a blocking operation that has risk of freezing the application when these operations are occurring on the same thread as the UI. We can therefore avoid hanging the UI simply by passing these tasks off to a background thread.</p>
+<h2 id="spawning-the-background-thread"><a class="header" href="#spawning-the-background-thread">Spawning the background thread</a></h2>
 <p>Next we will spawn a thread, and pass both a clone of our application event sender, and the background event receiver. The glib crate provides a <a href="https://gtk-rs.org/docs/glib/macro.clone.html#passing-a-strong-reference">clone macro</a> which can be used</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -944,7 +966,7 @@ std::thread::spawn(glib::clone!(@strong tx =&gt; move || {
 }));
 <span class="boring">}
 </span></code></pre></pre>
-<p>Now we will update our call to <code>App::new()</code> to take both channels as input parameters. We haven't yet created <code>App</code>, but our event handler will need the background sender to send events to the background, and the UI event sender for programming future task widgets dynamically created throughout the lifetime of the application.</p>
+<p>We're going to attach the background sender to our <code>App</code> in the future, so we need to update our call to <code>App::new()</code> to take both channels as input parameters.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -952,6 +974,7 @@ std::thread::spawn(glib::clone!(@strong tx =&gt; move || {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="backgroundrs"><a class="header" href="#backgroundrs">background.rs</a></h2>
+<p>Our background event loop is going to start with an async function that looks like this. It all take a sender for events we need to pass back to the UI, and the receiver for receiving events from the UI.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -961,32 +984,42 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use std::{fs, io};
 
-pub async fn run(tx: Sender&lt;Event&gt;, rx: Receiver&lt;(PathBuf, String, bool)&gt;) {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix(crate::APP_ID).unwrap();
+pub async fn run(tx: Sender&lt;Event&gt;, rx: Receiver&lt;BgEvent&gt;) {
 
-    let data_home = xdg_dirs.get_data_home();
-
-    let _ = fs::create_dir_all(&amp;data_home);
-
-    if let Some(path) = most_recent_file(&amp;data_home).unwrap() {
-        if let Ok(data) = std::fs::read_to_string(&amp;path) {
-            let _ = tx.send(Event::Load(data)).await;
-        }
-    }
-
-    while let Ok((path, data, last)) = rx.recv().await {
-        let path = xdg_dirs.place_data_file(path).unwrap();
-        std::fs::write(&amp;path, data.as_bytes()).unwrap();
-        if last {
-            break;
-        }
-    }
-
-    let _ = tx.send(Event::Quit).await;
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>This function will do the job of fetching the most recently-modified file in our data directory.</p>
+<h3 id="xdg"><a class="header" href="#xdg">XDG</a></h3>
+<p>On first startup, our application will load the most recently-modified task in memory. Applications should adhere to the XDG standards when they are making decisions about where to store files used by their application. Using the <code>xdg</code> crate, we can get the prefix for your application with the following code:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let xdg_dirs = xdg::BaseDirectories::with_prefix(crate::APP_ID)
+    .unwrap();
+<span class="boring">}
+</span></code></pre></pre>
+<p>Because the directory will not exist on a first startup, we need to ensure it's created:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let data_home = xdg_dirs.get_data_home();
+
+let _ = fs::create_dir_all(&amp;data_home);
+<span class="boring">}
+</span></code></pre></pre>
+<p>With the data directory for our app now created, we'll search it for the most recently-created file in this directory, and read that file into memory to pass back to our app:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if let Some(path) = most_recent_file(&amp;data_home).unwrap() {
+    if let Ok(data) = std::fs::read_to_string(&amp;path) {
+        let _ = tx.send(Event::Load(data)).await;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="fetching-the-most-recent-file"><a class="header" href="#fetching-the-most-recent-file">Fetching the most-recent file</a></h3>
+<p>The function, <code>most_recent_file()</code> contains the following for reference:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -996,7 +1029,9 @@ pub async fn run(tx: Sender&lt;Event&gt;, rx: Receiver&lt;(PathBuf, String, bool
 
     for entry in fs::read_dir(path)?.filter_map(Result::ok) {
         if entry.file_type().map_or(false, |kind| kind.is_file()) {
-            if let Ok(modified) = entry.metadata().and_then(|m| m.modified()) {
+            if let Ok(modified) = entry.metadata()
+                .and_then(|m| m.modified())
+            {
                 if modified &gt; most_recent {
                     target = Some(entry.path());
                     most_recent = modified;
@@ -1009,7 +1044,81 @@ pub async fn run(tx: Sender&lt;Event&gt;, rx: Receiver&lt;(PathBuf, String, bool
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h3 id="handling-events"><a class="header" href="#handling-events">Handling Events</a></h3>
+<p>And then finally, we will start handling the events we receive from the UI. The first being a request to save notes to a file, and the other a request to quit the application.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Events that the background thread's event loop will respond to
+pub enum BgEvent {
+    // Save tasks to a file
+    Save(PathBuf, String),
+
+    // Exit the from the event loop
+    Quit
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The <code>Quit</code> event will break from the event loop and then reply to the application that we have finished any task we were waiting on, and it is now safe to exit the application.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>while let Ok(event) = rx.recv().await {
+    match event {
+        BgEvent::Save(path, data) =&gt; {
+            let path = xdg_dirs.place_data_file(path).unwrap();
+            std::fs::write(&amp;path, data.as_bytes()).unwrap();
+        },
+
+        BgEvent::Quit =&gt; break
+    }
+}
+
+let _ = tx.send(Event::Quit).await;
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="review"><a class="header" href="#review">Review</a></h3>
+<p>At the end, your file should look like this:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub async fn run(tx: Sender&lt;Event&gt;, rx: Receiver&lt;BgEvent&gt;) {
+    let xdg_dirs = xdg::BaseDirectories::with_prefix(crate::APP_ID).unwrap();
+
+    let data_home = xdg_dirs.get_data_home();
+
+    let _ = fs::create_dir_all(&amp;data_home);
+
+    if let Some(path) = most_recent_file(&amp;data_home).unwrap() {
+        if let Ok(data) = std::fs::read_to_string(&amp;path) {
+            let _ = tx.send(Event::Load(data)).await;
+        }
+    }
+
+    while let Ok(event) = rx.recv().await {
+        match event {
+            BgEvent::Save(path, data) =&gt; {
+                let path = xdg_dirs.place_data_file(path).unwrap();
+                std::fs::write(&amp;path, data.as_bytes()).unwrap();
+            },
+
+            BgEvent::Quit =&gt; break
+        }
+    }
+
+    let _ = tx.send(Event::Quit).await;
+}
+<span class="boring">}
+</span></code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-the-task-widget-struct"><a class="header" href="#creating-the-task-widget-struct">Creating the Task Widget Struct</a></h1>
+<p>Before we work on the core of the application itself, I typically start by creating the widgets which the application will build upon. Every task in the application will consist of three widgets:</p>
+<ul>
+<li><code>gtk::Entry</code> for editing the text of a task</li>
+<li><code>gtk::Button</code> for inserting a new task below this task</li>
+<li><code>gtk::Button</code> for removing this task</li>
+</ul>
+<h2 id="widgetsrs"><a class="header" href="#widgetsrs">widgets.rs</a></h2>
+<p>Take note that because our tasks are created dynamically at runtime, we'll want a way of tracking them, which we can achieve with a <code>SlotMap</code>. The <code>Task</code> struct is going to contain each of the widgets owned by this task, as well as the row where this task was stored.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1023,13 +1132,53 @@ pub struct Task {
     pub insert: gtk::Button,
     pub remove: gtk::Button,
 
-    pub entry_signal: Option&lt;SignalHandlerId&gt;,
-
     // Tracks our position in the list
     pub row: i32,
 }
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we can construct our widgets.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Task {
+    pub fn new(row: i32) -&gt; Self {
 
-impl Task {
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The text entry will horizontally expanded to consume as much space as possible</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let entry = cascade! {
+    gtk::Entry::new();
+    ..set_hexpand(true);
+    ..show();
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then we'll create our two buttons. It's good practice to use icons over text, because text requires translations.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let insert = cascade! {
+    gtk::Button::from_icon_name(Some(&quot;list-add-symbolic&quot;), gtk::IconSize::Button);
+    ..show();
+};
+
+let remove = cascade! {
+    gtk::Button::from_icon_name(Some(&quot;list-remove-symbolic&quot;), gtk::IconSize::Button);
+    ..show();
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>We're not going to program these widgets just yet. Just return them as is to program later:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Task {
     pub fn new(row: i32) -&gt; Self {
         let entry = cascade! {
             gtk::Entry::new();
@@ -1051,76 +1200,145 @@ impl Task {
             insert,
             remove,
             entry,
-            entry_signal: None,
             row,
         }
-    }
-
-    pub fn connect(&amp;mut self, tx: Sender&lt;Event&gt;, entity: TaskEntity) {
-        let signal = self.entry.connect_changed(clone!(@strong tx =&gt; move |_| {
-            let tx = tx.clone();
-            spawn(async move {
-                let _ = tx.send(Event::Modified).await;
-            });
-        }));
-
-        self.entry_signal = Some(signal);
-
-        self.insert
-            .connect_clicked(clone!(@strong tx, @weak self.entry as entry =&gt; move |_| {
-                if entry.get_text_length() == 0 {
-                    return;
-                }
-
-                let tx = tx.clone();
-                spawn(async move {
-                    let _ = tx.send(Event::Insert(entity)).await;
-                });
-            }));
-
-        self.remove.connect_clicked(clone!(@strong tx =&gt; move |_| {
-            let tx = tx.clone();
-            spawn(async move {
-                let _ = tx.send(Event::Remove(entity)).await;
-            });
-        }));
-
-        self.entry
-            .connect_activate(clone!(@weak self.entry as entry =&gt; move |_| {
-                if entry.get_text_length() == 0 {
-                    return;
-                }
-
-                let tx = tx.clone();
-                spawn(async move {
-                    let _ = tx.send(Event::Insert(entity)).await;
-                });
-            }));
-    }
-
-    pub fn set_text(&amp;mut self, text: &amp;str) {
-        let signal = self.entry_signal.as_ref().unwrap();
-        self.entry.block_signal(signal);
-        self.entry.set_text(text);
-        self.entry.unblock_signal(signal);
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
-<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-the-base-app"><a class="header" href="#creating-the-base-app">Creating the Base App</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="creating-the-app"><a class="header" href="#creating-the-app">Creating the App</a></h1>
+<h2 id="apprs"><a class="header" href="#apprs">app.rs</a></h2>
+<p>Now we can get to creating our <code>App</code> struct. This will contain all of the values that we will work with throughout the lifetime of our application.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct App {
+</span>use crate::{Event, BgEvent, TaskEntity};
+use crate::widgets::Task;
+use crate::utils::spawn;
+
+use async_channel::Sender;
+use glib::clone;
+use glib::SourceId;
+use gtk::prelude::*;
+use slotmap::SlotMap;
+
+pub struct App {
     pub container: gtk::Grid,
     pub tasks: SlotMap&lt;TaskEntity, Task&gt;,
     pub scheduled_write: Option&lt;SourceId&gt;,
     pub tx: Sender&lt;Event&gt;,
-    pub btx: Sender&lt;(PathBuf, String, bool)&gt;,
+    pub btx: Sender&lt;BgEvent&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>All of our task widgets are going to be stored within the <code>container: gtk::Grid</code>. Each row of this grid will be associated with a task. The first column will contain the <code>gtk::Entry</code>, and the subsequent two columsn are the <code>gtk::Button</code>s. By using a grid, we can easily keep our widgets perfectly aligned in a grid.</p>
+<p>The <code>tasks: SlotMap&lt;TaskEntity, Task&gt;</code> field will contain all the tasks we're currently maintaining. This will be important for looking up which row a task was assigned to.</p>
+<p>When an entry has been modified, we're going to spawn a signal that waits until 5 seconds have passed since the last modification before sending an event to the background thread to save the contents of our task list, whose source ID is stored in <code>scheduled_write: Option&lt;SourceId&gt;</code>.</p>
+<p>And without requiring much explanation, <code>tx</code> and <code>btx</code> are handles for sending UI and background events.</p>
+<h3 id="setting-up-the-app"><a class="header" href="#setting-up-the-app">Setting up the App</a></h3>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl App {
+    pub fn new(
+        app: &amp;gtk::Application,
+        tx: Sender&lt;Event&gt;,
+        btx: Sender&lt;BgEvent&gt;
+    ) -&gt; Self {
+
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The first step will be creating the <code>gtk::Grid</code> that we are going to assign our widgets to. Each column and row will have 4 units of padding around them, and the widget itself will also have some padding.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let container = cascade! {
+    gtk::Grid::new();
+    ..set_column_spacing(4);
+    ..set_row_spacing(4);
+    ..set_border_width(4);
+    ..show();
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Because it will be possible for there to be more tasks than a window can display at one time, this widget will be wrapped within a <code>gtk::ScrolledWindow</code>. By defining that the <code>hscrollbar-policy</code> is <code>Never</code>, this will prevent the scrolling window from horizontally scrolling, but will permit vertical scrolling as necessary.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let scrolled = gtk::ScrolledWindowBuilder::new()
+    .hscrollbar_policy(gtk::PolicyType::Never)
+    .build();
+
+scrolled.add(&amp;container);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now we get to setting up our window, which we can create from the <code>&amp;gtk::Application</code> we received. Note that we are connecting our sender along with the scroller to the delete event. When the window is being destroyed, we are going to detach the scroller from the window so that it does not get destroyed alongside it. The purpose of doing so is to keep our <code>gtk::Entry</code> task widgets alive long enough for us to salvage the text in them to save their contents to the disk before we exit the application. Our sender is going to pass a UI event notifying our event handler about the window having been closed.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let _window = cascade! {
+    gtk::ApplicationWindow::new(app);
+    ..set_title(&quot;Todo&quot;);
+    ..add(&amp;scrolled);
+    ..connect_delete_event(clone!(@strong tx, @strong scrolled =&gt; move |win, _| {
+        // Detach to preserve widgets after destruction of window
+        win.remove(&amp;scrolled);
+
+        let tx = tx.clone();
+        spawn(async move {
+            let _ = tx.send(Event::Closed).await;
+        });
+        gtk::Inhibit(false)
+    }));
+    ..show_all();
+};
+
+gtk::Window::set_default_icon_name(&quot;icon-name-here&quot;);
+<span class="boring">}
+</span></code></pre></pre>
+<p>The last step is putting our app together, creating the first row, and returning the <code>App</code> struct:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut app = Self {
+    container,
+    tasks: SlotMap::with_key(),
+    scheduled_write: None,
+    tx,
+    btx,
+};
+
+app.insert_row(0);
+
+app
+<span class="boring">}
+</span></code></pre></pre>
+<p>Your file should now look like so:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use crate::{Event, BgEvent, TaskEntity};
+use crate::widgets::Task;
+use crate::utils::spawn;
+
+use async_channel::Sender;
+use glib::clone;
+use glib::SourceId;
+use gtk::prelude::*;
+use slotmap::SlotMap;
+
+pub struct App {
+    pub container: gtk::Grid,
+    pub tasks: SlotMap&lt;TaskEntity, Task&gt;,
+    pub scheduled_write: Option&lt;SourceId&gt;,
+    pub tx: Sender&lt;Event&gt;,
+    pub btx: Sender&lt;BgEvent&gt;,
 }
 
 impl App {
-    pub fn new(app: &amp;gtk::Application, tx: Sender&lt;Event&gt;, btx: Sender&lt;(PathBuf, String, bool)&gt;) -&gt; Self {
+    pub fn new(app: &amp;gtk::Application, tx: Sender&lt;Event&gt;, btx: Sender&lt;BgEvent&gt;) -&gt; Self {
         let container = cascade! {
             gtk::Grid::new();
             ..set_column_spacing(4);
@@ -1129,13 +1347,19 @@ impl App {
             ..show();
         };
 
+        let scrolled = gtk::ScrolledWindowBuilder::new()
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .build();
+
+        scrolled.add(&amp;container);
+
         let _window = cascade! {
             gtk::ApplicationWindow::new(app);
             ..set_title(&quot;Todo&quot;);
-            ..add(&amp;container);
-            ..connect_delete_event(clone!(@strong tx, @strong container =&gt; move |win, _| {
+            ..add(&amp;scrolled);
+            ..connect_delete_event(clone!(@strong tx, @strong scrolled =&gt; move |win, _| {
                 // Detach to preserve widgets after destruction of window
-                win.remove(&amp;container);
+                win.remove(&amp;scrolled);
 
                 let tx = tx.clone();
                 spawn(async move {
