@@ -1,4 +1,4 @@
-# Creating a Window With a Button
+# Creating a Window with a Button
 
 Let's start by setting up a convenience function for spawning futures on the default executor. This will be necessary to send messages through the async channel.
 
@@ -75,6 +75,7 @@ let _window = cascade! {
     gtk::Window::new(gtk::WindowType::Toplevel);
     ..add(&container);
     ..set_title("First GTK App");
+    ..set_default_size(300, 400);
     ..connect_delete_event(move |_, _| {
         gtk::main_quit();
         gtk::Inhibit(false)
