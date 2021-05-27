@@ -1589,15 +1589,33 @@ fn remove_(&amp;mut self, entity: TaskEntity) {
 <p>And of course, similar to having to increment the row values on insert, we'll do the reverse on removal of a widget.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="signaling-when-to-save"><a class="header" href="#signaling-when-to-save">Signaling when to Save</a></h1>
 <h2 id="apprs-3"><a class="header" href="#apprs-3">app.rs</a></h2>
+<p>There are two scenarios where we will save our tasks to a file. When the application has been closed, and every 5 seconds after the last modification. To start, lets add a signal that waits 5 seconds before sending the <code>SyncToDisk</code> event:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub async fn closed(&amp;mut self) {
-    self.sync_to_disk().await;
-    let _ = self.btx.send(BgEvent::Quit).await;
-}
+</span>pub fn modified(&amp;mut self) {
+    if let Some(id) = self.scheduled_write.take() {
+        glib::source_remove(id);
+    }
 
-pub async fn sync_to_disk(&amp;mut self) {
+    let tx = self.tx.clone();
+    self.scheduled_write = Some(glib::timeout_add_local(5000, move || {
+        let tx = tx.clone();
+        spawn(async move {
+            let _ = tx.send(Event::SyncToDisk).await;
+        });
+
+        glib::Continue(false)
+    }));
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>glib::timeout_add_local(5000, ...)</code> will schedule the provided closure to execute on local context after 5 seconds. This function returns an ID which we're storing in the <code>scheduled_write</code> property of our <code>App</code>. If we receive the <code>Modified</code> event again before the 5 seconds have passed, the previous signal will be removed and a new one registered in its place. That'll ensure that it doesn't trigger until after 5 seconds of idle keyboard time has passed.</p>
+<p>Next will be programming the <code>SyncToDisk</code> event. We're simply going to collect the text from each non-empty task widget in our slotmap, and combine it into a single string to pass to the background for saving. The <code>fomat</code> formatter from the <code>fomat_macros</code> crate provides a very intuitive means to achieve this.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub async fn sync_to_disk(&amp;mut self) {
     self.scheduled_write = None;
 
     let contents = fomat_macros::fomat!(
@@ -1612,8 +1630,19 @@ pub async fn sync_to_disk(&amp;mut self) {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<p>Finally, we can handle that <code>Closed</code> event that was sent when the <code>ApplicationWindow</code> was destroyed:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub async fn closed(&amp;mut self) {
+    self.sync_to_disk().await;
+    let _ = self.btx.send(BgEvent::Quit).await;
+}
+<span class="boring">}
+</span></code></pre></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="loading-tasks-from-a-file"><a class="header" href="#loading-tasks-from-a-file">Loading tasks from a file</a></h1>
 <h2 id="apprs-4"><a class="header" href="#apprs-4">app.rs</a></h2>
+<p>If in the future, we implement the ability to open a different list, we'll need a way of clearing the UI of the previous list. This simply involves popping out every task in the map and removing them one by one.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1622,8 +1651,13 @@ pub async fn sync_to_disk(&amp;mut self) {
         self.remove_(entity);
     }
 }
-
-pub fn load(&amp;mut self, data: String) {
+<span class="boring">}
+</span></code></pre></pre>
+<p>When we receive the contents of a list to load into our UI, we're going to split the string by newlines and create a row for each one, then insert that text into their entries.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn load(&amp;mut self, data: String) {
     self.clear();
 
     for (row, line) in data.lines().enumerate() {
