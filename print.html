@@ -558,6 +558,7 @@ impl App {
 </span>let button = cascade! {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
+    ..set_default_size(400, 600);
     ..connect_clicked(move |_| {
         let tx = tx.clone();
         spawn(async move {
@@ -1357,6 +1358,7 @@ impl App {
         let _window = cascade! {
             gtk::ApplicationWindow::new(app);
             ..set_title(&quot;Todo&quot;);
+            ..set_default_size(400, 600);
             ..add(&amp;scrolled);
             ..connect_delete_event(clone!(@strong tx, @strong scrolled =&gt; move |win, _| {
                 // Detach to preserve widgets after destruction of window
@@ -1809,6 +1811,7 @@ self.container.attach(&amp;task.insert, 2, row, 1, 1);
     gtk::HeaderBar::new();
     ..pack_end(&amp;delete_button);
     ..set_title(Some(&quot;ToDo&quot;));
+    ..set_show_close_button(true);
 };
 <span class="boring">}
 </span></code></pre></pre>

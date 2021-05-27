@@ -205,6 +205,7 @@ impl App {
 </span>let button = cascade! {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
+    ..set_default_size(400, 600);
     ..connect_clicked(move |_| {
         let tx = tx.clone();
         spawn(async move {

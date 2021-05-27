@@ -315,6 +315,7 @@ impl App {
         let _window = cascade! {
             gtk::ApplicationWindow::new(app);
             ..set_title(&quot;Todo&quot;);
+            ..set_default_size(400, 600);
             ..add(&amp;scrolled);
             ..connect_delete_event(clone!(@strong tx, @strong scrolled =&gt; move |win, _| {
                 // Detach to preserve widgets after destruction of window
