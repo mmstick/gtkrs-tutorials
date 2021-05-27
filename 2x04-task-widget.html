@@ -235,32 +235,30 @@ let remove = cascade! {
 </span><span class="boring">fn main() {
 </span>impl Task {
     pub fn new(row: i32) -&gt; Self {
-        let entry = cascade! {
-            gtk::Entry::new();
-            ..set_hexpand(true);
-            ..show();
-        };
-
-        let insert = cascade! {
-            gtk::Button::from_icon_name(Some(&quot;list-add-symbolic&quot;), gtk::IconSize::Button);
-            ..show();
-        };
-
-        let remove = cascade! {
-            gtk::Button::from_icon_name(Some(&quot;list-remove-symbolic&quot;), gtk::IconSize::Button);
-            ..show();
-        };
-
         Self {
-            insert,
-            remove,
-            entry,
+            insert: cascade! {
+                gtk::Button::from_icon_name(Some(&quot;list-add-symbolic&quot;), gtk::IconSize::Button);
+                ..show();
+            },
+
+            remove: cascade! {
+                gtk::Button::from_icon_name(Some(&quot;list-remove-symbolic&quot;), gtk::IconSize::Button);
+                ..show();
+            },
+
+            entry: cascade! {
+                gtk::Entry::new();
+                ..set_hexpand(true);
+                ..show();
+            },
+
             row,
         }
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
+<p>You can find available system icons for your applications using <a href="https://www.flathub.org/apps/details/org.gnome.design.IconLibrary">IconLibray</a>.</p>
 
                     </main>
 

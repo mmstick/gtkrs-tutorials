@@ -166,6 +166,182 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="marking--removing-done-tasks-with-checkbuttons"><a class="header" href="#marking--removing-done-tasks-with-checkbuttons">Marking &amp; Removing Done Tasks with CheckButtons</a></h1>
+<p>We are going to remove the remove buttons from each task and replace them with check buttons. To remove tasks from the list, we will replace the application's title bar with a <code>gtk::HeaderBar</code>, and place a delete button here that will show when any tasks have been checked.</p>
+<h2 id="mainrs"><a class="header" href="#mainrs">main.rs</a></h2>
+<p>We're adding two new events to our <code>Event</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Delete,
+Toggled(bool),
+<span class="boring">}
+</span></code></pre></pre>
+<p>Handling it in our event handler:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Event::Toggled(active) =&gt; app.toggled(active),
+Event::Delete =&gt; app.delete(),
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="widgetsrs"><a class="header" href="#widgetsrs">widgets.rs</a></h2>
+<p>We can track if tasks are completed with check marks, and remove them together in a batch. Add a new field to our <code>Task</code> struct to add a <code>gtk::CheckButton</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>check: gtk::CheckButton
+<span class="boring">}
+</span></code></pre></pre>
+<p>Since we're going to use these check marks for removal operations, we can remove the <code>remove</code> button as well.</p>
+<p>Then construct the widget and return it:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Self {
+    check: cascade! {
+        gtk::CheckButton::new();
+        ..show();
+    },
+
+    insert: cascade! {
+        gtk::Button::from_icon_name(Some(&quot;list-add-symbolic&quot;), gtk::IconSize::Button);
+        ..show();
+    },
+
+    entry: cascade! {
+        gtk::Entry::new();
+        ..set_hexpand(true);
+        ..show();
+    },
+
+    entry_signal: None,
+    row,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then we can add an event for when the button is toggled:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>self.check.connect_toggled(clone!(@strong tx =&gt; move |check| {
+    let tx = tx.clone();
+    let check = check.clone();
+    spawn(async move {
+        let _ = tx.send(Event::Toggled(check.get_active())).await;
+    })
+}));
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="apprs"><a class="header" href="#apprs">app.rs</a></h2>
+<h3 id="task-widgets"><a class="header" href="#task-widgets">Task Widgets</a></h3>
+<p>Then modify the attachments of these widgets in the app:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>self.container.attach(&amp;task.check, 0, row, 1, 1);
+self.container.attach(&amp;task.entry, 1, row, 1, 1);
+self.container.attach(&amp;task.insert, 2, row, 1, 1);
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="delete-button"><a class="header" href="#delete-button">Delete Button</a></h3>
+<p>Now we're going to create the delete button, with both an icon and a label. By default, a button is only permitted to have either an image or a label, but we can force it to show both by setting the <code>always_show_image</code> property. We also don't want this button to be shown when the window is shown, so we need to call <code>.set_no_show_all(true)</code>. Since this button performs a destructive action, we should style it as such with <code>.get_style_context().add_class(&amp;gtk::STYLE_CLASS_DESTRUCTIVE_ACTION)</code>.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let delete_button = cascade! {
+    gtk::Button::from_icon_name(Some(&quot;edit-delete-symbolic&quot;), gtk::IconSize::Button);
+    ..set_label(&quot;Delete&quot;);
+    // Show the icon alongside the label
+    ..set_always_show_image(true);
+    // Don't show this when the window calls `.show_all()`
+    ..set_no_show_all(true);
+    // Give this a destructive styling to signal that the action is destructive
+    ..get_style_context().add_class(&amp;gtk::STYLE_CLASS_DESTRUCTIVE_ACTION);
+    // Send the `Delete` event on click
+    ..connect_clicked(clone!(@strong tx =&gt; move |_| {
+        let tx = tx.clone();
+        spawn(async move {
+            let _ = tx.send(Event::Delete).await;
+        });
+    }));
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>This button widget will be attached to the title bar via the <code>gtk::HeaderBar</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let headerbar = cascade! {
+    gtk::HeaderBar::new();
+    ..pack_end(&amp;delete_button);
+    ..set_title(Some(&quot;ToDo&quot;));
+};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then modify our <code>ApplicationWindow</code> to change <code>.set_title()</code> for the following:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>..set_titlebar(Some(&amp;headerbar));
+<span class="boring">}
+</span></code></pre></pre>
+<p>And update our <code>App</code> struct to add the delete button.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>delete_button: gtk::Button
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="handling-toggle-events"><a class="header" href="#handling-toggle-events">Handling Toggle Events</a></h3>
+<p>We will show the delete button only when there is at least one active task checked. We can achieve this by adding another property to the <code>App</code> struct to track how many tasks are actively checked.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>checks_active: u32
+<span class="boring">}
+</span></code></pre></pre>
+<p>By default, assigning it in our constructor to <code>0</code> of course</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>checks_active: 0
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then we'll add the toggled method for handling the toggle events. If the event is toggled active, we increment the number. We do the reverse when it is unchecked. If the number is non-zero, we set the button as visible.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn toggled(&amp;mut self, active: bool) {
+    if active {
+        self.checks_active += 1;
+    } else {
+        self.checks_active -= 1;
+    }
+
+    self.delete_button.set_visible(self.checks_active != 0);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="handling-delete-events"><a class="header" href="#handling-delete-events">Handling Delete Events</a></h3>
+<p>When we've been requested to delete tasks that were marked as active, we'll iterate through our tasks and collect the entity IDs of each task that is active. We need to collect these into a vector on the side so that we're not modifying our task list as we're iterating across it. Once we have a list of tasks to remove, we'll call our remove method with each entity ID. Finally, we'll set the <code>checks_active</code> back to <code>0</code> and hide the button.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn delete(&amp;mut self) {
+    let remove_list = self.tasks.iter()
+        .filter(|(_, task)| task.check.get_active())
+        .map(|(id, _)| id)
+        .collect::&lt;Vec&lt;TaskEntity&gt;&gt;();
+
+    for id in remove_list {
+        self.remove(id);
+    }
+
+    self.checks_active = 0;
+    self.delete_button.set_visible(false);
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
