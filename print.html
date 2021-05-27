@@ -1594,7 +1594,7 @@ fn remove_(&amp;mut self, entity: TaskEntity) {
 </span><span class="boring">fn main() {
 </span>pub async fn closed(&amp;mut self) {
     self.sync_to_disk().await;
-    let _ = tx.send(BgEvent::Quit).await;
+    let _ = self.btx.send(BgEvent::Quit).await;
 }
 
 pub async fn sync_to_disk(&amp;mut self) {
@@ -1608,7 +1608,7 @@ pub async fn sync_to_disk(&amp;mut self) {
         }
     );
 
-    let _ = tx.send(BgEvent::Save(&quot;Task&quot;.into(), contents)).await;
+    let _ = self.btx.send(BgEvent::Save(&quot;Task&quot;.into(), contents)).await;
 }
 <span class="boring">}
 </span></code></pre></pre>
