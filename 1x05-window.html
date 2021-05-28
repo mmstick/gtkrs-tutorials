@@ -205,7 +205,6 @@ impl App {
 </span>let button = cascade! {
     gtk::Button::with_label(&quot;Click Me&quot;);
     ..set_border_width(4);
-    ..set_default_size(400, 600);
     ..connect_clicked(move |_| {
         let tx = tx.clone();
         spawn(async move {
@@ -240,6 +239,7 @@ impl App {
     gtk::Window::new(gtk::WindowType::Toplevel);
     ..add(&amp;container);
     ..set_title(&quot;First GTK App&quot;);
+    ..set_default_size(300, 400);
     ..connect_delete_event(move |_, _| {
         gtk::main_quit();
         gtk::Inhibit(false)
