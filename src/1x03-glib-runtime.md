@@ -22,13 +22,13 @@ pub fn spawn<F>(future: F) where F: Future<Output = ()> + 'static {
 
 ## Spawning tasks on the current thread's executor
 
-Using this approach, you can spawn futures onto the executor that is registered to the thread you are blocking from. By default, there is no executor initialized for newly-spawned threads, so you'll have to create and assign them to the current thread when `glib::MainContext::get_thread_default()` returns `None`.
+Using this approach, you can spawn futures onto the executor that is registered to the thread you are blocking from. By default, there is no executor initialized for newly-spawned threads, so you'll have to create and assign them to the current thread when `glib::MainContext::thread_default()` returns `None`.
 
 ```rust
 use std::future::Future;
 
 pub fn thread_context() -> glib::MainContext {
-    glib::MainContext::get_thread_default()
+    glib::MainContext::thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
             ctx.push_thread_default();
@@ -53,7 +53,7 @@ This is useful if you spawn a background thread and want to execute your futures
 use std::future::Future;
 
 pub fn thread_context() -> glib::MainContext {
-    glib::MainContext::get_thread_default()
+    glib::MainContext::thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
             ctx.push_thread_default();
@@ -128,7 +128,7 @@ use std::thread::sleep;
 use std::future::Future;
 
 fn thread_context() -> glib::MainContext {
-    glib::MainContext::get_thread_default()
+    glib::MainContext::thread_default()
         .unwrap_or_else(|| {
             let ctx = glib::MainContext::new();
             ctx.push_thread_default();
