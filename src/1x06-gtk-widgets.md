@@ -25,7 +25,7 @@ Containers control the behavior and layout of the widgets within them.
 
 Containers with selectable widgets
 
-- [ComboBox](): Used in conjuction with a tree model to show a list of options to select from
+- [ComboBox](): Used in conjunction with a tree model to show a list of options to select from
 - [ComboBoxText](): Streamlined variant of a ComboBox to choose from a list of text options
 - [IconView](): Think of a file browser with mouse drag selections. Essentially a FlowBox-like container with a grid of icons with text
 - [ListBox](): Each widget is an interactive row in a list, which may be activated or clicked, and may support multiple selections
