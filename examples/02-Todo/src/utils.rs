@@ -1,7 +1,7 @@
 use std::future::Future;
 
 pub fn thread_context() -> glib::MainContext {
-    glib::MainContext::get_thread_default().unwrap_or_else(|| {
+    glib::MainContext::thread_default().unwrap_or_else(|| {
         let ctx = glib::MainContext::new();
         ctx.push_thread_default();
         ctx
